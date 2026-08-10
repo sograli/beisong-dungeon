@@ -1,0 +1,14 @@
+{
+  "name": "背诵地牢",
+  "short_name": "背诵地牢",
+  "description": "政治知识三回合背诵训练",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101413",
+  "theme_color": "#101413",
+  "orientation": "any",
+  "categories": ["education", "games"],
+  "icons": [
+    {"src": "./app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
