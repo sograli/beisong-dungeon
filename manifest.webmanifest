@@ -1,7 +1,7 @@
 {
   "name": "背诵地牢",
   "short_name": "背诵地牢",
-  "description": "政治知识三回合背诵训练",
+  "description": "政治知识战斗、家园与限时副本背诵训练",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#101413",
