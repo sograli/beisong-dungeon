@@ -190,6 +190,47 @@ const electiveOneUnits=[
 ];
 function sharedQuestion(full,answer){return{stem:full.replace(answer,'____'),answer,full}}
 const sq=(title,items)=>({title,sharedBlanks:true,questions:items.map(([full,answer])=>sharedQuestion(full,answer))});
+const compulsoryTwoUnits=[
+ {title:'第一单元 生产资料所有制与经济体制',lessons:[
+  sq('第一课 我国的生产资料所有制',[
+   ['生产资料所有制在生产关系中起着决定性作用，是生产关系的核心。','决定性作用'],
+   ['我国在社会主义初级阶段坚持公有制为主体、多种所有制经济共同发展。','公有制为主体、多种所有制经济共同发展'],
+   ['以公有制为主体是社会主义初级阶段经济制度的根本特征。','根本特征'],
+   ['国有经济起主导作用，主要体现在控制力上。','控制力'],
+   ['国有企业是国有经济最主要的实现形式。','国有企业'],
+   ['非公有制经济是社会主义市场经济的重要组成部分。','重要组成部分'],
+   ['毫不动摇巩固和发展公有制经济，毫不动摇鼓励、支持、引导非公有制经济发展。','巩固和发展公有制经济']]),
+  sq('第二课 我国的社会主义市场经济体制',[
+   ['市场决定资源配置是市场经济的一般规律。','市场经济'],
+   ['市场主要通过价格、供求、竞争等机制来调节资源配置。','价格、供求、竞争'],
+   ['市场调节具有自发性、盲目性、滞后性等固有弊端。','自发性、盲目性、滞后性'],
+   ['统一开放、竞争有序的市场体系，是使市场在资源配置中起决定性作用的基础。','统一开放、竞争有序'],
+   ['党的领导是我国社会主义市场经济体制的一个重要特征。','党的领导'],
+   ['促进全体人民实现共同富裕是社会主义市场经济体制的根本目标。','共同富裕'],
+   ['科学的宏观调控、有效的政府治理，是社会主义市场经济体制优势的内在要求。','科学的宏观调控、有效的政府治理']])
+ ]},
+ {title:'第二单元 经济发展与社会进步',lessons:[
+  sq('第三课 我国的经济发展',[
+   ['坚持以人民为中心的发展思想，就是把实现人民幸福作为发展的目的和归宿。','人民幸福'],
+   ['坚持创新、协调、绿色、开放、共享发展。','创新、协调、绿色、开放、共享'],
+   ['创新是引领发展的第一动力。','第一动力'],
+   ['协调发展是持续健康发展的内在要求。','内在要求'],
+   ['绿色发展是永续发展的必要条件和人民对美好生活追求的重要体现。','永续发展的必要条件'],
+   ['开放是国家繁荣发展的必由之路。','必由之路'],
+   ['共享是中国特色社会主义的本质要求。','本质要求'],
+   ['高质量发展是全面建设社会主义现代化国家的首要任务。','首要任务'],
+   ['建设现代化产业体系，要把发展经济的着力点放在实体经济上。','实体经济']]),
+  sq('第四课 我国的个人收入分配与社会保障',[
+   ['我国实行按劳分配为主体、多种分配方式并存的分配制度。','按劳分配为主体、多种分配方式并存'],
+   ['生产资料所有制决定分配方式。','生产资料所有制'],
+   ['按劳分配是社会主义的分配原则。','社会主义的分配原则'],
+   ['居民收入来源主要包括劳动性收入、财产性收入、经营性收入和转移性收入。','劳动性收入、财产性收入、经营性收入和转移性收入'],
+   ['完善个人收入分配，要坚持居民收入增长和经济增长基本同步。','基本同步'],
+   ['社会保障通过防范和化解社会成员的生存危机，保障他们的基本生活权利。','基本生活权利'],
+   ['社会保险是我国社会保障体系的核心。','社会保险'],
+   ['完善社会保障体系要坚持社会保障水平与经济社会发展相适应。','经济社会发展相适应']])
+ ]}
+];
 const compulsoryThreeUnits=[
  {title:'第一单元 中国共产党的领导',lessons:[
   sq('第一课 历史和人民的选择',[
@@ -335,7 +376,7 @@ const electiveThreeUnits=[
    ['提高超前思维的正确性，需要运用科学的思维方法。','科学的思维方法']])
  ]}
 ];
-const bookContent={1:{units:[{title:'第一单元',lessons},{title:'第二单元',lessons:[]},{title:'第三单元',lessons:[]},{title:'第四单元',lessons:[]}]},2:{units:compulsoryThreeUnits},4:{units:electiveOneUnits},6:{units:electiveThreeUnits}};
+const bookContent={1:{units:compulsoryTwoUnits},2:{units:compulsoryThreeUnits},4:{units:electiveOneUnits},6:{units:electiveThreeUnits}};
 function unitList(){return bookContent[nav.book]?.units||[]}
 function lessonList(){return unitList()[nav.unit]?.lessons||[]}
 let state=JSON.parse(localStorage.getItem('zhijing-state')||'null')||{};
@@ -349,7 +390,8 @@ if(legacyState&&state.energy){let charges=state.energy;while(charges>=levelNeed(
 function updateStats(){state.hp=Math.max(0,Math.min(100,state.hp));$('#hpText').textContent=state.hp;$('#hpBar').style.width=state.hp+'%';$('#energyText').textContent=state.levelCharge+'/'+levelNeed(state.level);$('#energyBar').style.width=(state.levelCharge/levelNeed(state.level)*100)+'%';$('#levelText').textContent=state.level;$('#coinText').textContent=state.coins}
 function show(id){$$('.view').forEach(v=>v.classList.remove('active'));$(id).classList.add('active');const locked=id==='#battleView'||id==='#bedroomRaid'||id==='#classroomRaid';$('#homesteadTab').disabled=locked;$('#raidsTab').disabled=locked;$('#dungeonTab').disabled=locked;$('#homeTutorialBtn').disabled=locked;$('.game-nav').classList.toggle('locked',locked);if(id==='#homeView')setTimeout(()=>scrollToPlayer(false),0)}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
-function attack(){state.hp-=3;save();toast('怪物反击，生命 -3');if(state.hp<=0){toast('生命耗尽，请前往水晶球复习');setTimeout(openReview,600)}}
+function spendBattleHp(correct){state.hp-=correct?2:3;save();toast(correct?'完成作答，生命 -2':'作答消耗 -2，答错追加 -1');return state.hp>0}
+function attack(){state.hp-=3;save();toast('回答错误，生命 -3')}
 function enterBook(index){nav={book:index,unit:0,lesson:0,stage:'units'};moveVector.x=0;moveVector.y=0;playerPos={x:50,y:10};adventurer.style.left='50%';adventurer.style.bottom='10%';releaseJoystick();renderPath()}
 $$('.door').forEach(d=>d.onclick=()=>toast('使用摇杆控制角色走到门前'));
 let playerPos={x:50,y:10},moveVector={x:0,y:0},pressed={},lastMoveTime=performance.now(),nearDoor=null,crystalCooldown=0;
@@ -373,7 +415,7 @@ $('#backBtn').onclick=()=>{if(nav.stage==='lessons'){nav.stage='units';renderPat
 function currentLesson(){return lessonList()[nav.lesson]}
 function questionOrder(){return shuffle(Array.from({length:currentLesson().questions.length},(_,index)=>index))}
 function startBattle(i){nav.lesson=i;const lesson=currentLesson();$('#prepTitle').textContent=lesson.title+' · 战斗准备';const unlocked=state.level>=2,lens=state.level>=4;$('#codexLock').textContent=(unlocked?'魔典已展开，可在开战前查看答案':'魔典将在 2 级解锁')+(lens?' · 透镜已装备（本场 2 次）':' · 透镜将在 4 级解锁');$('#codexBody').innerHTML=unlocked?lesson.questions.map((x,n)=>`<div class="codex-entry">${n+1}. ${x.stem.replace('____','【'+x.answer+'】')}<b>${x.full}</b></div>`).join(''):'';$('#prepModal').classList.add('open')}
-function beginBattle(){battle={round:1,qIndex:0,subIndex:0,order:questionOrder(),selected:null,lensUses:state.level>=4?2:0,revealed:{}};$('#prepModal').classList.remove('open');show('#battleView');setMusic('battle');renderBattle()}
+function beginBattle(){battle={round:1,qIndex:0,subIndex:0,order:questionOrder(),selected:null,lensUses:state.level>=4?2:0,revealed:{},answerLocked:false};$('#prepModal').classList.remove('open');show('#battleView');setMusic('battle');renderBattle()}
 function shuffle(a){return a.sort(()=>Math.random()-.5)}
 function q(){return currentLesson().questions[battle.order[battle.qIndex]]}
 function firstRoundChoices(item){const others=shuffle([...new Set(currentLesson().questions.map(question=>question.answer).filter(answer=>answer!==item.answer))]);return shuffle([item.answer,...others.slice(0,2)])}
@@ -386,12 +428,14 @@ function appendLens(){if(state.level<4)return;const key=lensKey(),answer=current
 function maskLens(answer,shown){return [...answer].map((c,i)=>/[\u4e00-\u9fff]/.test(c)?(shown.includes(i)?c:'□'):c).join('')}
 function useLens(){if(battle.lensUses<1)return;const answer=currentLensAnswer(),key=lensKey(),shown=battle.revealed[key]||[],available=[...answer].map((c,i)=>/[\u4e00-\u9fff]/.test(c)&&!shown.includes(i)?i:-1).filter(i=>i>=0);if(!available.length)return toast('当前答案已全部显现');shown.push(available[Math.floor(Math.random()*available.length)]);battle.revealed[key]=shown;battle.lensUses--;$('#lensResult').textContent=maskLens(answer,shown);$('#lensBtn').textContent=`透镜 ${battle.lensUses}/2`;$('#lensBtn').disabled=battle.lensUses<1;toast('透镜揭示了一个字')}
 function bindCards(correct){$$('.card').forEach(c=>{c.ondragstart=e=>e.dataTransfer.setData('text/plain',c.dataset.answer);c.onclick=()=>{$$('.card').forEach(x=>x.classList.remove('selected'));c.classList.add('selected');battle.selected=c.dataset.answer}});const z=$('#dropZone');z.ondragover=e=>e.preventDefault();z.ondrop=e=>{e.preventDefault();checkCard(e.dataTransfer.getData('text/plain'),correct)};z.onclick=()=>battle.selected&&checkCard(battle.selected,correct)}
-function checkCard(a,correct){if(norm(a)===norm(correct)){toast('命中！怪物被消灭');nextQuestion()}else attack()}
+function checkCard(a,correct){if(battle.answerLocked)return;const right=norm(a)===norm(correct);if(right){if(spendBattleHp(true)){toast('命中！怪物被消灭');nextQuestion()}else battleDefeated()}else showWrongAnswer(correct)}
 function bindWhite(correct){const c=$('#whiteCard'),z=$('#dropZone');c.ondragstart=e=>e.dataTransfer.setData('text/plain',$('#answerInput').value);c.onclick=()=>{battle.selected=$('#answerInput').value;c.classList.add('selected')};z.ondragover=e=>e.preventDefault();z.ondrop=e=>{e.preventDefault();checkWhite(e.dataTransfer.getData('text/plain'),correct)};z.onclick=()=>checkWhite(battle.selected||$('#answerInput').value,correct)}
-function checkWhite(a,correct){if(norm(a)===norm(correct)){toast('碎片净化成功');if(currentLesson().sharedBlanks){nextQuestion();return}const item=q();if(++battle.subIndex>=item.subs.length){battle.subIndex=0;nextQuestion()}else renderBattle()}else attack()}
+function checkWhite(a,correct){if(battle.answerLocked)return;const right=norm(a)===norm(correct);if(!right){showWrongAnswer(correct);return}if(!spendBattleHp(true)){battleDefeated();return}toast('碎片净化成功');if(currentLesson().sharedBlanks){nextQuestion();return}const item=q();if(++battle.subIndex>=item.subs.length){battle.subIndex=0;nextQuestion()}else renderBattle()}
 function norm(s){return (s||'').replace(/[，。、“”‘’；：,.!！?？\s]/g,'')}
-function checkFull(correct){if(norm($('#fullInput').value)===norm(correct)){toast('知识重构完成');nextQuestion()}else attack()}
-function nextQuestion(){battle.qIndex++;if(battle.qIndex>=currentLesson().questions.length){if(battle.round===3){settleVictory();setMusic('calm');return}battle.round++;battle.qIndex=0;battle.subIndex=0;battle.order=questionOrder()}setTimeout(renderBattle,300)}
+function checkFull(correct){if(battle.answerLocked)return;const right=norm($('#fullInput').value)===norm(correct);if(right){if(spendBattleHp(true)){toast('知识重构完成');nextQuestion()}else battleDefeated()}else showWrongAnswer(correct)}
+function showWrongAnswer(correct){battle.answerLocked=true;spendBattleHp(false);battle.order.push(battle.order[battle.qIndex]);const panel=$('#battlePanel');panel.querySelectorAll('button,input,textarea').forEach(control=>control.disabled=true);panel.insertAdjacentHTML('beforeend',`<div class="wrong-answer"><div class="round-label">回答错误，正确答案</div><div class="question">${correct}</div><button class="primary" id="confirmWrong">确认并继续</button></div>`);$('#confirmWrong').disabled=false;$('#confirmWrong').onclick=()=>{battle.answerLocked=false;battle.subIndex=0;if(state.hp<=0)battleDefeated();else nextQuestion()}}
+function battleDefeated(){toast('生命耗尽，请前往水晶球复习');setTimeout(openReview,600)}
+function nextQuestion(){battle.qIndex++;if(battle.qIndex>=battle.order.length){if(battle.round===3){settleVictory();setMusic('calm');return}battle.round++;battle.qIndex=0;battle.subIndex=0;battle.order=questionOrder()}setTimeout(renderBattle,300)}
 $('#leaveBattle').onclick=()=>{show('#homeView');setMusic('calm')};$('#returnHome').onclick=()=>{$('#victoryModal').classList.remove('open');show('#homeView');setActiveTab('dungeon')};$('#closePrep').onclick=()=>$('#prepModal').classList.remove('open');$('#confirmBattle').onclick=beginBattle;
 function settleVictory(){const key=`${nav.book}-${nav.unit}-${nav.lesson}`,now=Date.now(),recent=now-(state.lastClears[key]||0)<3*24*60*60*1000,reward=recent?3:5,oldLevel=state.level;state.coins+=reward;state.lastClears[key]=now;state.energy++;state.levelCharge++;let leveled=false;while(state.levelCharge>=levelNeed(state.level)){state.levelCharge-=levelNeed(state.level);state.level++;leveled=true}grantSpellFromCharge();save();const lensUnlocked=oldLevel<4&&state.level>=4;$('#victoryReward').innerHTML=`魔法石充能 +1<br>金币 +${reward}${recent?'（三天内重复通关）':''}${leveled?`<br>等级提升至 ${state.level} 级`:''}${lensUnlocked?'<br>获得新道具：透镜':''}`;$('#victoryModal').classList.add('open')}
 function talentStats(){return{crit:(state.talents.includes('crit')?5:0)+(state.talents.includes('nature')?5:0),bonus:(state.talents.includes('growth')?2:0)+(state.talents.includes('nature')?3:0),lucky:(state.talents.includes('lucky')?5:0)+(state.talents.includes('nature')?3:0)}}
