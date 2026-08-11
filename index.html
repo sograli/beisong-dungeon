@@ -70,7 +70,10 @@
 <div class="modal" id="raidResultModal"><div class="modal-box victory"><div class="gem" id="raidResultIcon">◆</div><h2 id="raidResultTitle">副本完成</h2><div class="result-score" id="raidResultScore"></div><p id="raidResultBody"></p><button class="primary" id="closeRaidResult">返回副本大厅</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 <script>
-const books=['政治必修一','政治必修二','政治必修三','政治必修四','政治选必一','政治选修二','政治选修三'];
+const books=['政治必修一','政治必修二','政治必修三','政治必修四','政治选必一','政治选修二','政治选必三'];
+document.querySelector('[data-book="6"] span').textContent=books[6];
+document.querySelector('[data-buy="medium"]').textContent='150 金币';
+document.querySelector('[data-buy="advanced"]').textContent='500 金币';
 const units=['第一单元','第二单元','第三单元','第四单元'];
 const lessons=[
  {title:'我国的生产资料所有制',questions:[
@@ -185,7 +188,84 @@ const electiveOneUnits=[
    {stem:'亚洲基础设施投资银行致力于为亚洲地区的____建设提供资金支持。',answer:'基础设施',full:'亚洲基础设施投资银行致力于为亚洲地区的基础设施建设提供资金支持。'}]}
  ]}
 ];
-const bookContent={1:{units:[{title:'第一单元',lessons},{title:'第二单元',lessons:[]},{title:'第三单元',lessons:[]},{title:'第四单元',lessons:[]}]},4:{units:electiveOneUnits}};
+function sharedQuestion(full,answer){return{stem:full.replace(answer,'____'),answer,full}}
+const sq=(title,items)=>({title,sharedBlanks:true,questions:items.map(([full,answer])=>sharedQuestion(full,answer))});
+const electiveThreeUnits=[
+ {title:'第一单元 树立科学思维观念',lessons:[
+  sq('第一课 走进思维世界',[
+   ['思维具有间接性、概括性和能动性等共同特征。','间接性、概括性和能动性'],
+   ['思维在实践中产生，在实践中发展，又反作用于实践。','实践'],
+   ['抽象思维以概念作为思维的基本单元。','概念'],
+   ['形象思维的基本单元是感性形象。','感性形象']]),
+  sq('第二课 把握逻辑要义',[
+   ['形式逻辑的核心任务是把握从真前提推导出真结论的规律和规则。','从真前提推导出真结论'],
+   ['同一律要求在同一思维过程中，每一思想必须保持自身同一性。','自身同一性'],
+   ['违反矛盾律要求的逻辑错误叫作自相矛盾。','自相矛盾'],
+   ['违反排中律要求的逻辑错误叫作两不可。','两不可']]),
+  sq('第三课 领会科学思维',[
+   ['内容真实和形式正确是科学思维的两个基本条件。','内容真实和形式正确'],
+   ['科学思维追求认识的客观性。','客观性'],
+   ['科学思维的结果具有预见性和可检验性。','预见性和可检验性'],
+   ['学习科学思维有利于我们把握事物的本质和发展规律。','本质和发展规律']])
+ ]},
+ {title:'第二单元 遵循逻辑思维规则',lessons:[
+  sq('第四课 准确把握概念',[
+   ['概念就是通过揭示事物的本质属性而反映事物的思维形式。','本质属性'],
+   ['概念的内涵是指概念所反映的事物的本质属性。','内涵'],
+   ['定义最基本、最常用的方法是种差加属概念。','种差加属概念'],
+   ['划分是从外延方面明确概念的逻辑方法。','外延']]),
+  sq('第五课 正确运用判断',[
+   ['判断就是对认识对象有所断定的思维形式。','有所断定'],
+   ['性质判断一般由量项、主项、联项和谓项组成。','量项、主项、联项和谓项'],
+   ['复合判断包括联言判断、选言判断和假言判断等。','联言判断、选言判断和假言判断'],
+   ['充分条件假言判断的逻辑形式是如果p，那么q。','如果p，那么q']]),
+  sq('第六课 掌握演绎推理方法',[
+   ['演绎推理是从一般性前提推出个别性结论的推理。','一般性前提推出个别性结论'],
+   ['要确保得到真实的结论，演绎推理必须具备两个条件。','两个条件'],
+   ['三段论由大项、小项和中项三个不同的项组成。','大项、小项和中项'],
+   ['联言推理的合成式从各个联言支的真实性推出联言判断的真实性。','合成式']]),
+  sq('第七课 学会归纳与类比推理',[
+   ['完全归纳推理的前提遍及认识的全部对象。','全部对象'],
+   ['不完全归纳推理分为简单枚举归纳推理和科学归纳推理。','简单枚举归纳推理和科学归纳推理'],
+   ['求同法的特点是异中求同。','异中求同'],
+   ['类比推理是根据两个或两类对象在一些属性上相同或相似，推出它们在其他属性上也相同或相似的推理。','其他属性上也相同或相似']])
+ ]},
+ {title:'第三单元 运用辩证思维方法',lessons:[
+  sq('第八课 把握辩证分合',[
+   ['辩证思维用联系、发展、全面的观点看待事物和思考问题。','联系、发展、全面'],
+   ['分析是把认识对象分解为各个部分、要素、层次，分别加以认识的一种思维方法。','分析'],
+   ['综合是一种把认识对象的各个部分、要素、层次和不同发展阶段联系起来加以考察的思维方法。','综合'],
+   ['辩证的分析与综合是客观事物的矛盾在思维中的反映。','矛盾']]),
+  sq('第九课 理解质量互变',[
+   ['质是一事物成为自身并区别于他事物的内部固有的规定性。','质'],
+   ['量是事物存在和发展的规模、程度、速度等可以用数量表示的规定性。','量'],
+   ['事物发展过程中的连续性是指事物只是在量上发生了变化。','连续性'],
+   ['遵循质量互变规律要求我们以统一性的观念正确把握事物发展过程中的量变与质变。','统一性']]),
+  sq('第十课 推动认识发展',[
+   ['任何事物内部都包含着肯定与否定两个方面。','肯定与否定'],
+   ['辩证的否定具有肯定与否定的双重性。','双重性'],
+   ['从感性具体到思维抽象是认识过程的第一次飞跃。','第一次飞跃'],
+   ['从思维抽象发展到思维具体是认识过程的第二次飞跃。','第二次飞跃']])
+ ]},
+ {title:'第四单元 提高创新思维能力',lessons:[
+  sq('第十一课 创新思维善于联想',[
+   ['创新思维要以实践为基础，失去实践基础，思维会陷入不切实际的幻想。','实践'],
+   ['联想思维就是将记忆中对不同事物的认识进行联结与思考的思维活动。','联结与思考'],
+   ['迁移是联想思维的联结方式。','迁移'],
+   ['想象是联想思维的畅想方式。','想象']]),
+  sq('第十二课 创新思维要多路探索',[
+   ['发散思维是根据已知的事物信息，从不同的角度、不同的方向思考，以寻求解决问题的多样性答案的思维方式。','多样性答案'],
+   ['聚合思维是利用已有的知识和经验，把众多信息逐步引导到条理化的逻辑思路中。','聚合思维'],
+   ['逆向思维就是反向求索，或者称为反向法。','反向求索'],
+   ['正逆互补，携手共进，是我们运用正向思维和逆向思维应当遵循的原则。','正逆互补，携手共进']]),
+  sq('第十三课 创新思维要力求超前',[
+   ['超前思维是在多角度、全方位地分析事物的历史和现状的基础上，从事物发展的现实情况出发，认识和把握事物的发展状态的思维形态。','超前思维'],
+   ['超前思维具有探索性、预测性和不确定性。','探索性、预测性和不确定性'],
+   ['矛盾分析方法是分析矛盾、解决矛盾的方法。','矛盾分析方法'],
+   ['提高超前思维的正确性，需要运用科学的思维方法。','科学的思维方法']])
+ ]}
+];
+const bookContent={1:{units:[{title:'第一单元',lessons},{title:'第二单元',lessons:[]},{title:'第三单元',lessons:[]},{title:'第四单元',lessons:[]}]},4:{units:electiveOneUnits},6:{units:electiveThreeUnits}};
 function unitList(){return bookContent[nav.book]?.units||[]}
 function lessonList(){return unitList()[nav.unit]?.lessons||[]}
 let state=JSON.parse(localStorage.getItem('zhijing-state')||'null')||{};
@@ -227,7 +307,8 @@ function beginBattle(){battle={round:1,qIndex:0,subIndex:0,order:questionOrder()
 function shuffle(a){return a.sort(()=>Math.random()-.5)}
 function q(){return currentLesson().questions[battle.order[battle.qIndex]]}
 function firstRoundChoices(item){const others=shuffle([...new Set(currentLesson().questions.map(question=>question.answer).filter(answer=>answer!==item.answer))]);return shuffle([item.answer,...others.slice(0,2)])}
-function renderBattle(){const lesson=currentLesson(),total=lesson.questions.length,dot=$$('.round-dot');dot.forEach((d,i)=>d.classList.toggle('on',i<battle.round));$('#battleTitle').textContent=`${lesson.title} · 第 ${battle.round} 回合`;const p=$('#battlePanel');if(battle.round===1){const item=q(),choices=firstRoundChoices(item);p.innerHTML=`<div class="round-label">回合一 · 识别概念 ${battle.qIndex+1}/${total}</div><div class="question">${item.stem.replace('____','<span class="blank" id="dropZone">拖入卡牌</span>')}</div><div class="cards">${choices.map(x=>`<button draggable="true" class="card" data-answer="${x}">${x}</button>`).join('')}</div><div class="action-row"><span class="hint">拖拽卡牌，或依次点击卡牌与空格</span></div>`;bindCards(item.answer)}else if(battle.round===2){const item=q(),shared=lesson.sharedBlanks,sub=shared?null:item.subs[battle.subIndex],blank='<span class="blank" id="dropZone">拖入白卡</span>',stem=shared?item.stem:sub.fill,answer=shared?item.answer:sub.a,subProgress=shared?'':` · ${battle.subIndex+1}/${item.subs.length}`;p.innerHTML=`<div class="round-label">回合二 · 纯填空 ${battle.qIndex+1}/${total}${subProgress}</div><div class="question">${stem.replace('____',blank)}</div><div class="cards"><div draggable="true" class="card" id="whiteCard">白卡：<span id="cardText">尚未书写</span></div></div><textarea class="answer-input" id="answerInput" placeholder="在白卡上写下空缺内容"></textarea><div class="action-row"><span class="hint">写完后拖动白卡，或点击白卡再点空格</span></div>`;$('#answerInput').oninput=e=>$('#cardText').textContent=e.target.value||'尚未书写';bindWhite(answer)}else{const item=q();p.innerHTML=`<div class="round-label">回合三 · 完整重构 ${battle.qIndex+1}/${total}</div><div class="question">核心问题：${item.stem.replace('____','？')}</div><textarea class="answer-input" id="fullInput" placeholder="完整写出整句话"></textarea><div class="action-row"><span class="hint">标点差异不影响判断</span><button class="primary" id="submitFull">释放咒文</button></div>`;$('#submitFull').onclick=()=>checkFull(item.full)} }
+function promptedHint(text){let count=0;return[...text].map(char=>{if(/[^\u4e00-\u9fffA-Za-z0-9]/.test(char))return char;count++;return count%10===0?char:'＿'}).join('')}
+function renderBattle(){const lesson=currentLesson(),total=lesson.questions.length,dot=$$('.round-dot');dot.forEach((d,i)=>d.classList.toggle('on',i<battle.round));$('#battleTitle').textContent=`${lesson.title} · 第 ${battle.round} 回合`;const p=$('#battlePanel');if(battle.round===1){const item=q(),choices=firstRoundChoices(item);p.innerHTML=`<div class="round-label">回合一 · 识别概念 ${battle.qIndex+1}/${total}</div><div class="question">${item.stem.replace('____','<span class="blank" id="dropZone">拖入卡牌</span>')}</div><div class="cards">${choices.map(x=>`<button draggable="true" class="card" data-answer="${x}">${x}</button>`).join('')}</div><div class="action-row"><span class="hint">拖拽卡牌，或依次点击卡牌与空格</span></div>`;bindCards(item.answer)}else if(battle.round===2){const item=q(),shared=lesson.sharedBlanks,sub=shared?null:item.subs[battle.subIndex],stem=shared?item.stem:sub.fill,answer=shared?item.answer:sub.a,subProgress=shared?'':` · ${battle.subIndex+1}/${item.subs.length}`;p.innerHTML=`<div class="round-label">回合二 · 致盲填空 ${battle.qIndex+1}/${total}${subProgress}</div><div class="question">${stem.replace('____','<span class="blank">？？？</span>')}</div><div class="round-label">受到了致盲！在聊天框敲下答案后选择确认就可以了。</div><textarea class="answer-input" id="answerInput" placeholder="在聊天框敲下答案"></textarea><div class="action-row"><span class="hint">确认后才会解除致盲</span><button class="primary" id="submitBlind">确认</button></div>`;$('#submitBlind').onclick=()=>checkWhite($('#answerInput').value,answer)}else{const item=q();p.innerHTML=`<div class="round-label">回合三 · 提示填写 ${battle.qIndex+1}/${total}</div><div class="question">${promptedHint(item.full)}</div><textarea class="answer-input" id="fullInput" placeholder="根据提示完整写出整句话"></textarea><div class="action-row"><span class="hint">每 10 个字显示 1 个提示字，标点差异不影响判断</span><button class="primary" id="submitFull">确认</button></div>`;$('#submitFull').onclick=()=>checkFull(item.full)} }
 const baseRenderBattle=renderBattle;renderBattle=function(){baseRenderBattle();appendLens()};
 function currentLensAnswer(){return battle.round===1?q().answer:battle.round===2?(currentLesson().sharedBlanks?q().answer:q().subs[battle.subIndex].a):q().full}
 function lensKey(){return `${battle.round}-${battle.qIndex}-${battle.subIndex}`}
@@ -249,9 +330,9 @@ function setActiveTab(tab){$('#dungeonTab').classList.toggle('on',tab==='dungeon
 function openHomestead(){show('#homesteadView');setActiveTab('home');renderHomestead();setMusic('calm')}
 $('#dungeonTab').onclick=()=>{show('#homeView');setActiveTab('dungeon')};$('#homesteadTab').onclick=openHomestead;
 const weaponNames={starter:'初级法杖',medium:'中级魔杖',advanced:'高级法杖'};
-function renderHomestead(){const clean=state.pollution<=0,stats=talentStats();$('#treeScene').classList.toggle('clean',clean);$('#treeTitle').textContent=clean?'新生树苗':'混沌古树';$('#treeSub').textContent=clean?'施放生长魔法，让树苗向天空生长':'每次净化减少 3% 污染，每净化 1% 获得 10 金币';$('#treeMetricLabel').textContent=clean?'树木高度':'污染值';$('#treeMetric').textContent=clean?formatHeight(state.treeHeight):state.pollution+'%';$('#pollutionBar').style.width=(clean?Math.min(100,state.treeHeight/1000*100):state.pollution)+'%';$('#spellText').textContent=state.spells;$('#castBtn').textContent=clean?'施放生长魔法':'施放净化魔法';$('#castBtn').disabled=state.spells<1;$('#attributeGrid').innerHTML=`<div class="attribute">当前武器<b>${weaponNames[state.weapon]}</b></div><div class="attribute">可施法次数<b>${state.spells}</b></div><div class="attribute">暴击概率<b>${stats.crit}%</b></div><div class="attribute">固定生长加成<b>+${stats.bonus} cm</b></div><div class="attribute">额外次数概率<b>${stats.lucky}%</b></div><div class="attribute">已获天赋<b>${state.talents.length}/4</b></div>`;document.querySelectorAll('[data-buy]').forEach(btn=>{const type=btn.dataset.buy,owned=state.weapon===type||(state.weapon==='advanced'&&type==='medium'),price=type==='medium'?100:300;btn.disabled=owned||state.coins<price;btn.textContent=owned?'已拥有':price+' 金币'})}
+function renderHomestead(){const clean=state.pollution<=0,stats=talentStats();$('#treeScene').classList.toggle('clean',clean);$('#treeTitle').textContent=clean?'新生树苗':'混沌古树';$('#treeSub').textContent=clean?'施放生长魔法，让树苗向天空生长':'每次净化减少 3% 污染，每净化 1% 获得 10 金币';$('#treeMetricLabel').textContent=clean?'树木高度':'污染值';$('#treeMetric').textContent=clean?formatHeight(state.treeHeight):state.pollution+'%';$('#pollutionBar').style.width=(clean?Math.min(100,state.treeHeight/1000*100):state.pollution)+'%';$('#spellText').textContent=state.spells;$('#castBtn').textContent=clean?'施放生长魔法':'施放净化魔法';$('#castBtn').disabled=state.spells<1;$('#attributeGrid').innerHTML=`<div class="attribute">当前武器<b>${weaponNames[state.weapon]}</b></div><div class="attribute">可施法次数<b>${state.spells}</b></div><div class="attribute">暴击概率<b>${stats.crit}%</b></div><div class="attribute">固定生长加成<b>+${stats.bonus} cm</b></div><div class="attribute">额外次数概率<b>${stats.lucky}%</b></div><div class="attribute">已获天赋<b>${state.talents.length}/4</b></div>`;document.querySelectorAll('[data-buy]').forEach(btn=>{const type=btn.dataset.buy,owned=state.weapon===type||(state.weapon==='advanced'&&type==='medium'),price=type==='medium'?150:500;btn.disabled=owned||state.coins<price;btn.textContent=owned?'已拥有':price+' 金币'})}
 function formatHeight(cm){return cm<100?cm+' cm':(cm/100).toFixed(2).replace(/\.00$/,'')+' m'}
-document.querySelectorAll('[data-buy]').forEach(btn=>btn.onclick=()=>{const type=btn.dataset.buy,price=type==='medium'?100:300;if(state.coins<price)return toast('金币不足');if(state.weapon===type||(state.weapon==='advanced'&&type==='medium'))return;state.coins-=price;state.weapon=type;state.spellCharges=0;save();renderHomestead();toast('已装备'+weaponNames[type])});
+document.querySelectorAll('[data-buy]').forEach(btn=>btn.onclick=()=>{const type=btn.dataset.buy,price=type==='medium'?150:500;if(state.coins<price)return toast('金币不足');if(state.weapon===type||(state.weapon==='advanced'&&type==='medium'))return;state.coins-=price;state.weapon=type;state.spellCharges=0;save();renderHomestead();toast('已装备'+weaponNames[type])});
 $('#castBtn').onclick=()=>{if(state.spells<1)return toast('魔法石充能后才能施法');state.spells--;if(state.pollution>0){const purified=Math.min(3,state.pollution);state.pollution=Math.max(0,state.pollution-purified);const reward=purified*10;state.coins+=reward;save();renderHomestead();toast(`污染值 -${purified}%，金币 +${reward}`);return}const stats=talentStats(),base=6+Math.floor(Math.random()*7)+stats.bonus,critical=stats.crit&&Math.random()*100<stats.crit,gain=critical?base*2:base,old=state.treeHeight;state.treeHeight+=gain;save();renderHomestead();toast(critical?`暴击！树木生长 ${gain} cm`:`树木生长 ${gain} cm`);checkTalentMilestone(old,state.treeHeight)};
 function checkTalentMilestone(oldHeight,newHeight){const milestones=[100,300,500,1000];const next=milestones.find((m,i)=>oldHeight<m&&newHeight>=m&&!state.talentMilestones.includes(i));if(next){const i=milestones.indexOf(next);state.talentMilestones.push(i);save();setTimeout(()=>openTalent(i),500)}}
 function openTalent(index){const choices=index<3?[['crit','暴击','每次生长魔法有 5% 概率高度翻倍'],['growth','疯长','每次施法生长高度 +2 cm'],['lucky','幸运','每次充能有 5% 概率额外获得 1 次施法']].filter(x=>!state.talents.includes(x[0])):[['nature','自然之友','暴击 +5%，生长 +3 cm，额外施法概率 +3%']];$('#talentChoices').innerHTML=choices.map(x=>`<button class="talent ${x[0]==='nature'?'gold':''}" data-talent="${x[0]}"><h3>${x[1]}</h3><span>${x[2]}</span></button>`).join('');document.querySelectorAll('[data-talent]').forEach(btn=>btn.onclick=()=>{state.talents.push(btn.dataset.talent);save();$('#talentModal').classList.remove('open');renderHomestead();toast('永久天赋已生效')});$('#talentModal').classList.add('open')}
