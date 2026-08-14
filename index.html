@@ -1037,6 +1037,38 @@ pickBottle=async function(){
   }catch(error){console.error('漂流瓶加载失败',error);result.innerHTML='<div class="board-lock">漂流瓶加载失败，请检查网络后重试</div>'}finally{button.disabled=false}
 };
 if($('#pickBottleBtn'))$('#pickBottleBtn').onclick=pickBottle;
+let adminMailConfirmKey='',adminMailConfirmUntil=0,adminMailConfirmTimer=null;
+const stableEnsureAdminMailer=ensureAdminMailer;
+ensureAdminMailer=function(){
+  stableEnsureAdminMailer();const panel=$('#adminMailPanel'),button=$('#adminSendMailBtn');if(!panel||!button)return;
+  if(!$('#adminMailStatus'))panel.insertAdjacentHTML('beforeend','<div class="auth-message" id="adminMailStatus"></div>');
+  button.onclick=adminSendMail
+};
+adminSendMail=async function(){
+  const button=$('#adminSendMailBtn'),status=$('#adminMailStatus');if(!button)return;
+  const showStatus=message=>{if(status)status.textContent=message;toast(message)};
+  const remaining=Math.ceil((adminMailCooldownUntil-Date.now())/1000);if(remaining>0)return showStatus(`发送冷却中，请等待 ${remaining} 秒`);
+  const target=$('#adminMailTarget')?.value.trim()||'',subject=$('#adminMailSubject')?.value.trim()||'',body=$('#adminMailBody')?.value.trim()||'',itemType=$('#adminMailItem')?.value||'none',itemAmount=Math.max(0,+($('#adminMailAmount')?.value||0));
+  if(!subject||!body)return showStatus('请填写邮件标题和内容');
+  if(itemType!=='none'&&itemAmount<1)return showStatus(itemType==='achievement'?'请填写成就有效天数':'请填写附件数量');
+  if(itemType==='achievement'&&itemAmount>3650)return showStatus('成就有效天数不能超过 3650 天');
+  const confirmKey=JSON.stringify([target,subject,body,itemType,itemAmount]);
+  if(adminMailConfirmKey!==confirmKey||Date.now()>adminMailConfirmUntil){
+    adminMailConfirmKey=confirmKey;adminMailConfirmUntil=Date.now()+8000;button.textContent='再次点击确认发送';showStatus(`请在 8 秒内再次点击，确认发送给${target||'所有用户'}`);
+    clearTimeout(adminMailConfirmTimer);adminMailConfirmTimer=setTimeout(()=>{if(Date.now()>=adminMailConfirmUntil){adminMailConfirmKey='';button.textContent='发送';if(status)status.textContent='发送确认已取消'}},8100);return
+  }
+  adminMailConfirmKey='';adminMailConfirmUntil=0;clearTimeout(adminMailConfirmTimer);button.disabled=true;button.textContent='正在发送';if(status)status.textContent='正在连接邮件服务器…';
+  try{
+    await ensureSupabaseClient();
+    if(!authUser)throw new Error('请先登录管理员账号');
+    if(!socialData.is_admin){await loadSocialData();if(!socialData.is_admin)throw new Error('当前账号没有管理员权限')}
+    const timeoutError=new Error('MAIL_TIMEOUT'),response=await Promise.race([supabaseClient.rpc('admin_send_mail',{target_display:target,mail_subject:subject,mail_body:body,mail_item_type:itemType,mail_item_amount:itemAmount}),new Promise((_,reject)=>setTimeout(()=>reject(timeoutError),20000))]);
+    if(response.error)throw response.error;
+    const sent=Number(Array.isArray(response.data)?response.data[0]:response.data)||0;adminMailCooldownUntil=Date.now()+10000;showStatus(`发送成功，邮件已送达 ${sent} 名用户`);
+    clearInterval(adminMailCooldownTimer);const paint=()=>{const seconds=Math.max(0,Math.ceil((adminMailCooldownUntil-Date.now())/1000));button.disabled=seconds>0;button.textContent=seconds>0?`已发送 ${seconds}s`:'发送';if(seconds<=0)clearInterval(adminMailCooldownTimer)};paint();adminMailCooldownTimer=setInterval(paint,250)
+  }catch(error){console.error('管理员邮件发送失败',error);button.disabled=false;button.textContent='发送';showStatus(error?.message==='MAIL_TIMEOUT'?'发送请求超时，邮件可能已经送达，请先检查后不要重复群发':(error?.message||'邮件发送失败，请稍后重试'))}
+};
+ensureAdminMailer();
 </script>
 </body></html>
 
