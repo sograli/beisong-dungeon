@@ -821,7 +821,43 @@ function updateAuthCooldown(){clearInterval(authCooldownTimer);const buttons=[$(
 function beginAuthCooldown(){if(Date.now()<authCooldownUntil){updateAuthCooldown();setAuthMessage(`操作过快，请等待 ${Math.ceil((authCooldownUntil-Date.now())/1000)} 秒。`);return false}authCooldownUntil=Date.now()+60000;localStorage.setItem(AUTH_COOLDOWN_KEY,String(authCooldownUntil));updateAuthCooldown();return true}
 $('#authBtn').onclick=()=>{openAuth();setAuthMethod(authMethod);updateAuthCooldown()};$('#closeAuth').onclick=()=>$('#authModal').classList.remove('open');$('#emailModeBtn').onclick=()=>setAuthMethod('email');$('#accountModeBtn').onclick=()=>setAuthMethod('account');$('#refreshCaptchaBtn').onclick=newCaptcha;
 $('#loginBtn').onclick=async()=>{if(!verifyHuman())return;const password=$('#authPassword').value,email=authMethod==='account'?accountLoginEmail($('#authAccountName').value):$('#authEmail').value.trim();if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');setAuthMessage('正在连接云端…');if(authMode==='recovery'){const{error}=await supabaseClient.auth.updateUser({password});if(error)return setAuthMessage(authErrorMessage(error));authMode='login';setAuthMessage('密码已更新，可以继续游戏。');renderAuth();return}const{error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)return setAuthMessage(authErrorMessage(error));setAuthMessage('登录成功，正在同步进度…');setTimeout(()=>$('#authModal').classList.remove('open'),700)};
-$('#registerBtn').onclick=async()=>{if(!verifyHuman())return;const password=$('#authPassword').value,name=$('#authAccountName').value.trim(),email=authMethod==='account'?accountLoginEmail(name):$('#authEmail').value.trim();if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');if(!beginAuthCooldown())return;setAuthMessage('正在创建账号…');const options=authMethod==='account'?{data:{login_name:name,login_type:'account'}}:{},redirect=authRedirectUrl();if(authMethod==='email'&&redirect)options.emailRedirectTo=redirect;const{data,error}=await supabaseClient.auth.signUp({email,password,options});if(error)return setAuthMessage(authErrorMessage(error));setAuthMessage(authMethod==='account'?(data.session?'账号注册并登录成功。':'账号已注册；请在 Supabase 关闭邮箱确认后直接登录。'):(data.session?'注册并登录成功。':'注册成功，请打开邮箱中的验证邮件。请勿重复点击注册。'))};
+let registrationBusy=false;
+$('#registerBtn').onclick=async()=>{
+  if(registrationBusy)return setAuthMessage('注册请求正在处理中，请勿重复点击。');
+  if(!navigator.onLine)return setAuthMessage('当前设备没有网络连接，请联网后重试。');
+  if(!verifyHuman())return;
+  const password=$('#authPassword').value,
+    name=$('#authAccountName').value.trim(),
+    email=authMethod==='account'?accountLoginEmail(name):$('#authEmail').value.trim();
+  if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');
+  if(!beginAuthCooldown())return;
+  registrationBusy=true;
+  const controls=[$('#loginBtn'),$('#registerBtn'),$('#forgotBtn')];
+  controls.forEach(button=>button.disabled=true);
+  setAuthMessage('正在连接注册服务器…');
+  const startedAt=Date.now();
+  const slowTimer=setTimeout(()=>setAuthMessage('服务器响应较慢，正在继续等待…'),4000);
+  const timeoutError=new Error('REGISTER_TIMEOUT');
+  try{
+    const options=authMethod==='account'?{data:{login_name:name,login_type:'account'}}:{},redirect=authRedirectUrl();
+    if(authMethod==='email'&&redirect)options.emailRedirectTo=redirect;
+    const{data,error}=await Promise.race([
+      supabaseClient.auth.signUp({email,password,options}),
+      new Promise((_,reject)=>setTimeout(()=>reject(timeoutError),18000))
+    ]);
+    if(error)return setAuthMessage(authErrorMessage(error));
+    const seconds=Math.max(1,Math.round((Date.now()-startedAt)/1000));
+    setAuthMessage(authMethod==='account'
+      ?(data.session?`账号注册并登录成功（用时 ${seconds} 秒）。`:'账号已创建，但 Supabase 开启了邮箱确认。请在 Authentication → Providers → Email 中关闭 Confirm email，然后直接登录。')
+      :(data.session?`注册并登录成功（用时 ${seconds} 秒）。`:'注册成功，请打开邮箱中的验证邮件。请勿重复点击注册。'));
+  }catch(error){
+    setAuthMessage(error===timeoutError?'注册服务器响应超时。账号可能已经创建，请先尝试登录，不要重复注册。':authErrorMessage(error));
+  }finally{
+    clearTimeout(slowTimer);
+    registrationBusy=false;
+    updateAuthCooldown();
+  }
+};
 $('#forgotBtn').onclick=async()=>{const email=$('#authEmail').value.trim();if(!email)return setAuthMessage('请先填写绑定的邮箱。');if(!beginAuthCooldown())return;setAuthMessage('正在发送找回邮件…');const redirectTo=authRedirectUrl();const{error}=await supabaseClient.auth.resetPasswordForEmail(email,redirectTo?{redirectTo}:undefined);setAuthMessage(error?authErrorMessage(error):'找回邮件已发送，请检查收件箱和垃圾邮件。请勿重复发送。')};
 $('#logoutBtn').onclick=async()=>{await saveCloudProgress();const{error}=await supabaseClient.auth.signOut();if(error)return setAuthMessage(error.message);$('#authModal').classList.remove('open');toast('已退出账号，本机进度仍然保留')};
 /* 语文模式：羊皮纸地图、分段背诵、诅咒与全文挑战 */
