@@ -61,7 +61,7 @@
     .cn-match-pairs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cn-match-left,.cn-match-right{display:grid;gap:9px;align-content:start}.cn-match-left button{background:#d5a72e!important;color:#fff!important;border-color:#f0ca62!important;font-weight:700}.cn-match-right button{background:#fff!important;color:#151515!important;border-color:#d5d5d5!important}.cn-match button.selected{outline:3px solid #67b7dc}.cn-match button.paired{opacity:0;pointer-events:none;transform:scale(.86);transition:.25s}.cn-tutorial-btn{position:absolute;left:14px;top:14px;z-index:8;border:1px solid #5b3d20;background:#f0dca3;color:#392514;padding:9px 12px;cursor:pointer}.cn-tutorial-list{display:grid;gap:10px}.cn-tutorial-list div{padding:12px;border-left:3px solid var(--gold);background:#141a18;line-height:1.65}.center-hint{margin:12px 0;padding:12px;background:#efe2bc;color:#332315;letter-spacing:2px;line-height:2}.admin-achievement-days{display:none}.admin-achievement-days.show{display:block}@media(max-width:700px){.mode-switch{left:8px!important;right:auto!important;top:62px!important;max-width:88px;padding:6px 8px;font-size:11px;box-shadow:0 4px 14px rgba(0,0,0,.45)}}@media(max-width:430px){.mode-switch{top:58px!important}}.chinese-map .parchment{width:1900px!important;height:1400px!important}.map-node.pending{opacity:1;background:#b9aa86;color:#4b4435;border-color:#756a52;box-shadow:0 5px 0 #786d57}.map-node.pending:after{content:'待开放';position:absolute;top:55px;white-space:nowrap;font-size:9px;color:#5a4a35;font-weight:400}
     .cn-match-left button{font-size:16px!important}.cn-match-left button:after{content:none!important}.chinese-map{width:100%;height:calc(100svh - 124px);min-height:420px;flex:none!important;background:#4a3420!important;isolation:isolate}.chinese-map.active{display:block!important}.chinese-map .parchment-viewport{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:420px;opacity:1!important;visibility:visible!important;background:#4a3420!important;z-index:1}.chinese-map .parchment{display:block!important;opacity:1!important;visibility:visible!important;background-color:#d8bd7f!important}.chinese-map-recovery{position:absolute;inset:0;display:none;place-items:center;background:#4a3420;color:#fff4cd;z-index:9}.chinese-map.recovering .chinese-map-recovery{display:grid}@media(max-width:700px){.chinese-map{height:calc(100svh - 116px);min-height:360px}.chinese-map .parchment-viewport{min-height:360px}}
     .chinese-map .map-road{background:transparent!important;border-color:transparent!important}.chinese-map .parchment{contain:layout paint;transform:translateZ(0)}.chinese-map .map-hero{will-change:left,top;backface-visibility:hidden}.brush-road-layer{position:absolute;inset:0;width:100%;height:100%;z-index:1;overflow:visible;pointer-events:none;contain:strict;transform:translateZ(0)}.brush-road-shadow{fill:none;stroke:#50351f;stroke-linecap:round;stroke-linejoin:round;opacity:.34}.brush-road-ink{fill:none;stroke:#76552f;stroke-linecap:round;stroke-linejoin:round;filter:url(#brushRough)}.brush-road-dry{fill:none;stroke:#b18a53;stroke-linecap:round;stroke-dasharray:2 8 17 5;opacity:.28}@media(max-width:700px),(prefers-reduced-motion:reduce){.brush-road-ink{filter:none}.brush-road-dry{display:none}}
-    body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable="true"]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}
+    body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable="true"]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}.view:not(.active){display:none!important}.chinese-work .work-levels{position:relative;z-index:20;pointer-events:auto!important}.chinese-work .work-level{position:relative;z-index:21;pointer-events:auto!important;touch-action:manipulation;-webkit-tap-highlight-color:rgba(229,189,88,.22)}
   </style>
 </head>
 <body>
@@ -984,6 +984,59 @@ const baseLoadSocialData=loadSocialData;loadSocialData=async function(){await ba
 function isEditableCopyTarget(target){return target instanceof Element&&!!target.closest('input,textarea,[contenteditable="true"]')}
 document.addEventListener('copy',event=>{if(isEditableCopyTarget(event.target))return;event.preventDefault();toast('页面内容不可复制')});
 document.addEventListener('contextmenu',event=>{if(isEditableCopyTarget(event.target))return;event.preventDefault()});
+openChineseWork=function(work){
+  if(!work)return toast('篇目数据尚未载入');
+  const paragraphs=Array.isArray(work.paragraphs)?work.paragraphs.filter(p=>p&&String(p.text||p.central||'').trim()):[];
+  if(!paragraphs.length)return toast('该篇目的关卡内容尚未生成');
+  work.paragraphs=paragraphs;selectedChineseWork=work;show('#chineseWorkView');
+  $('#cnWorkTheme').textContent=chineseThemes[Number(work.theme)]||'古诗文';
+  $('#cnWorkTitle').textContent='《'+String(work.title||'未命名篇目')+'》';
+  $('#cnWorkAuthor').textContent=String(work.author||'');
+  const lock=state.chineseChallengeLocks[work.id]||0,left=Math.max(0,lock-Date.now()),challenge=$('#fullChallengeBtn');
+  challenge.disabled=left>0;challenge.textContent=left>0?`全文挑战锁定 ${Math.ceil(left/3600000)} 小时`:'我超勇，直接挑战背全文';
+  const levels=$('#cnWorkLevels');
+  levels.innerHTML=`<button type="button" class="work-level" data-cn-level="overview"><span>总览关</span><h3>理解全文</h3><p>主题选择、段意配对、中心句默写</p></button>`+paragraphs.map((p,i)=>{const heading=String(p.central||p.text||`第 ${i+1} 段`).slice(0,14);return `<button type="button" class="work-level" data-cn-level="${i}"><span>第 ${i+1} 段</span><h3>${escapeHtml(heading)}…</h3><p>段意、重点字、分句与整段背诵</p></button>`}).join('');
+  levels.onclick=event=>{const button=event.target.closest('[data-cn-level]');if(!button||!levels.contains(button))return;event.preventDefault();event.stopPropagation();startChineseLevel(button.dataset.cnLevel)};
+  levels.scrollTop=0
+};
+const stableStartChineseLevel=startChineseLevel;
+startChineseLevel=function(level){
+  if(!selectedChineseWork||!Array.isArray(selectedChineseWork.paragraphs)||!selectedChineseWork.paragraphs.length)return toast('关卡数据加载失败，请重新进入该篇目');
+  const index=level==='overview'?0:Number(level);
+  if(!Number.isInteger(index)||index<0||index>=selectedChineseWork.paragraphs.length)return toast('该段落暂时无法进入');
+  try{stableStartChineseLevel(level)}catch(error){console.error('语文关卡启动失败',error);$('.game-nav').style.display='grid';openChineseWork(selectedChineseWork);toast('关卡启动失败，页面已自动恢复，请再次点击')}
+};
+function setSubjectModeStable(mode,openView=true){
+  preferredSubjectMode=mode==='chinese'?'chinese':'politics';state.subjectMode=preferredSubjectMode;
+  localStorage.setItem('beisong-subject-mode',preferredSubjectMode);save();updateSubjectModeUi();
+  if(!openView)return;
+  if(preferredSubjectMode==='chinese')openChineseMap();else{cnSession=null;show('#homeView');setActiveTab('dungeon');$('.game-nav').style.display='grid';setTimeout(()=>scrollToPlayer(false),0)}
+}
+$('#subjectModeBtn').onclick=()=>setSubjectModeStable(state.subjectMode==='chinese'?'politics':'chinese');
+$('#dungeonTab').onclick=()=>{setActiveTab('dungeon');if(state.subjectMode==='chinese')openChineseMap();else{show('#homeView');setTimeout(()=>scrollToPlayer(false),0)}};
+openSocial=async function(){
+  show('#socialView');setActiveTab('social');ensureSocialExtraTabs();
+  $('#friendList').innerHTML='<div class="board-lock">正在加载社交数据…</div>';
+  if(!authUser){$('#friendList').innerHTML='<div class="board-lock">登录账号后使用好友、聊天和称号</div>';$('#friendRequests').innerHTML='';return}
+  try{await ensureSupabaseClient();await loadSocialData()}catch(error){console.error('社交页面加载失败',error);$('#friendList').innerHTML='<div class="board-lock">社交数据加载失败，请检查网络后重新进入</div>'}
+};
+$('#socialTab').onclick=openSocial;
+pickBottle=async function(){
+  const result=$('#bottleResult'),button=$('#pickBottleBtn');if(!result||!button)return;
+  button.disabled=true;result.innerHTML='<div class="board-lock">正在寻找漂流瓶…</div>';
+  try{
+    await ensureSupabaseClient();const response=await supabaseClient.rpc('pick_drift_bottle');
+    if(response.error){result.innerHTML=`<div class="board-lock">${escapeHtml(response.error.message)}</div>`;return}
+    let bottle=response.data;if(Array.isArray(bottle))bottle=bottle[0];if(typeof bottle==='string'){try{bottle=JSON.parse(bottle)}catch(error){bottle={body:bottle}}}if(bottle?.pick_drift_bottle)bottle=bottle.pick_drift_bottle;if(Array.isArray(bottle))bottle=bottle[0];
+    const id=bottle?.id??bottle?.bottle_id,body=String(bottle?.body??bottle?.message_body??bottle?.content??bottle?.text??'').trim();
+    if(!id){result.innerHTML='<div class="board-lock">暂时没有漂流瓶，请稍后再试</div>';return}
+    if(!body){result.innerHTML='<div class="board-lock">这个漂流瓶没有可显示的内容，请重新捞取</div>';return}
+    result.innerHTML=`<div class="mail-item"><div class="bottle-text">${escapeHtml(body)}</div><button class="report-btn" id="reportBottleBtn">举报</button><textarea class="answer-input" id="bottleReply" maxlength="300" placeholder="写下回复"></textarea><button class="primary" id="replyBottleBtn">回复并领取友谊结晶</button></div>`;
+    $('#reportBottleBtn').onclick=async()=>{const report=await supabaseClient.rpc('report_drift_bottle',{bottle_id:id,reason:'内容不当'});toast(report.error?report.error.message:'举报成功');if(!report.error)$('#reportBottleBtn').disabled=true};
+    $('#replyBottleBtn').onclick=async()=>{const reply=$('#bottleReply').value.trim();if(!reply)return toast('请先写下回复');const replyResult=await supabaseClient.rpc('reply_drift_bottle',{bottle_id:id,reply_body:reply});if(replyResult.error)return toast(replyResult.error.message);toast(`获得 ${replyResult.data?.crystals||1} 个友谊结晶`);result.textContent='已回复漂流瓶'};
+  }catch(error){console.error('漂流瓶加载失败',error);result.innerHTML='<div class="board-lock">漂流瓶加载失败，请检查网络后重试</div>'}finally{button.disabled=false}
+};
+if($('#pickBottleBtn'))$('#pickBottleBtn').onclick=pickBottle;
 </script>
 </body></html>
 
