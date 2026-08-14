@@ -589,7 +589,19 @@ let nav={book:1,unit:0,lesson:0,stage:'units'}, battle={round:1,qIndex:0,subInde
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const SUPABASE_URL='https://vuvqmaxzqcghcvmlqgrk.supabase.co';
 const SUPABASE_KEY='sb_publishable_FCawdLoFV3qI-nVxSI9QQw_jZ8Y0SNv';
-const supabaseClient=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY);
+let supabaseClient=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY),supabaseLoadPromise=null;
+function loadSupabaseSdk(url){return new Promise((resolve,reject)=>{const script=document.createElement('script'),timer=setTimeout(()=>{script.remove();reject(new Error('SDK_TIMEOUT'))},8000);script.src=url;script.async=true;script.crossOrigin='anonymous';script.onload=()=>{clearTimeout(timer);window.supabase?.createClient?resolve():reject(new Error('SDK_INVALID'))};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('SDK_LOAD_FAILED'))};document.head.append(script)})}
+async function ensureSupabaseClient(){
+  if(supabaseClient?.auth)return supabaseClient;
+  if(window.supabase?.createClient){supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return supabaseClient}
+  if(!supabaseLoadPromise)supabaseLoadPromise=(async()=>{
+    const sources=['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js','https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'];
+    for(const source of sources){try{await loadSupabaseSdk(source);if(window.supabase?.createClient){supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return supabaseClient}}catch(error){console.warn('Supabase SDK 加载失败',source,error.message)}}
+    throw new Error('SUPABASE_SDK_UNAVAILABLE')
+  })().finally(()=>{supabaseLoadPromise=null});
+  return supabaseLoadPromise
+}
+function cloudUnavailableMessage(){return '云端登录组件加载失败，请检查网络后刷新页面。若仍然失败，请切换 Wi-Fi 或移动网络重试。'}
 let authUser=null,cloudReady=false,cloudSaveTimer=null,authMode='login',lastIdChangeAt=null;
 function save(){localStorage.setItem('zhijing-state',JSON.stringify(state));updateStats();scheduleCloudSave()}
 function scheduleCloudSave(){if(!authUser||!cloudReady)return;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(saveCloudProgress,700)}
@@ -600,7 +612,7 @@ function authRedirectUrl(){return location.protocol.startsWith('http')?location.
 function renderAuth(){const loggedIn=!!authUser&&authMode!=='recovery';$('#authBtn').textContent=authUser?'账号':'登录';$('#authForm').hidden=loggedIn;$('#logoutBtn').hidden=!loggedIn;$('#authAccount').hidden=!loggedIn;$('#authTitle').textContent=loggedIn?'冒险档案已连接':authMode==='recovery'?'设置新密码':'登录背诵地牢';$('#authSub').textContent=loggedIn?'进度修改后会自动保存到云端':authMode==='recovery'?'请输入新的账号密码':'用邮箱登录或用账号密码登录';if(loggedIn)$('#authAccount').textContent=authUser.user_metadata?.login_name||authUser.email;$('#loginBtn').textContent=authMode==='recovery'?'确认新密码':'登录';$('#registerBtn').hidden=authMode==='recovery';$('#forgotBtn').hidden=authMode==='recovery'||authMethod==='account'}
 function repairAuthModal(){const modal=$('#authModal');if(!modal)return;if(modal.parentElement!==document.body)document.body.append(modal);modal.style.removeProperty('width');modal.style.removeProperty('height');modal.style.removeProperty('max-height');modal.scrollTop=0}
 function openAuth(){setAuthMessage('');renderAuth();repairAuthModal();$('#authModal').classList.add('open');requestAnimationFrame(repairAuthModal)}
-async function initAuth(){if(!supabaseClient)return;const{data}=await supabaseClient.auth.getSession();authUser=data.session?.user||null;renderAuth();if(authUser)loadCloudProgress();supabaseClient.auth.onAuthStateChange((event,session)=>{authUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){authMode='recovery';openAuth()}else if(event==='SIGNED_IN'&&authUser){authMode='login';renderAuth();loadCloudProgress()}else if(event==='SIGNED_OUT'){cloudReady=false;renderAuth()}})}
+async function initAuth(){try{await ensureSupabaseClient()}catch(error){console.warn(cloudUnavailableMessage());return}const{data}=await supabaseClient.auth.getSession();authUser=data.session?.user||null;renderAuth();if(authUser)loadCloudProgress();supabaseClient.auth.onAuthStateChange((event,session)=>{authUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){authMode='recovery';openAuth()}else if(event==='SIGNED_IN'&&authUser){authMode='login';renderAuth();loadCloudProgress()}else if(event==='SIGNED_OUT'){cloudReady=false;renderAuth()}})}
 function levelNeed(level){return level===1?1:level===2?2:level===3?4:level===4?8:level===5?16:20}
 if(legacyState&&state.energy){let charges=state.energy;while(charges>=levelNeed(state.level)){charges-=levelNeed(state.level);state.level++}state.levelCharge=charges}
 function updateStats(){state.hp=Math.max(0,Math.min(100,state.hp));$('#hpText').textContent=state.hp;$('#hpBar').style.width=state.hp+'%';$('#energyText').textContent=state.levelCharge+'/'+levelNeed(state.level);$('#energyBar').style.width=(state.levelCharge/levelNeed(state.level)*100)+'%';$('#levelText').textContent=state.level;$('#coinText').textContent=state.coins;$('#friendshipCrystalText').textContent=state.friendshipCrystals||0;$('#titlePill').hidden=!state.displayTitles.length;$('#activeTitleText').textContent=state.displayTitles.join(' · ');if(state.hp<=0)setTimeout(enforceZeroHpReview,0)}
@@ -823,7 +835,7 @@ function authErrorMessage(error){const message=(error?.message||'').toLowerCase(
 function updateAuthCooldown(){clearInterval(authCooldownTimer);const buttons=[$('#registerBtn'),$('#forgotBtn')],labels=['注册新账号','忘记密码？发送找回邮件'];const paint=()=>{const left=Math.max(0,Math.ceil((authCooldownUntil-Date.now())/1000));buttons.forEach((button,index)=>{button.disabled=left>0;button.textContent=left>0?`请等待 ${left} 秒`:labels[index]});$('#loginBtn').disabled=false;if(left<=0){clearInterval(authCooldownTimer);localStorage.removeItem(AUTH_COOLDOWN_KEY)}};paint();if(authCooldownUntil>Date.now())authCooldownTimer=setInterval(paint,250)}
 function beginAuthCooldown(){if(Date.now()<authCooldownUntil){updateAuthCooldown();setAuthMessage(`操作过快，请等待 ${Math.ceil((authCooldownUntil-Date.now())/1000)} 秒。`);return false}authCooldownUntil=Date.now()+60000;localStorage.setItem(AUTH_COOLDOWN_KEY,String(authCooldownUntil));updateAuthCooldown();return true}
 $('#authBtn').onclick=()=>{openAuth();setAuthMethod(authMethod);updateAuthCooldown()};$('#closeAuth').onclick=()=>$('#authModal').classList.remove('open');$('#emailModeBtn').onclick=()=>setAuthMethod('email');$('#accountModeBtn').onclick=()=>setAuthMethod('account');$('#refreshCaptchaBtn').onclick=newCaptcha;
-$('#loginBtn').onclick=async()=>{if(!verifyHuman())return;const password=$('#authPassword').value,email=authMethod==='account'?accountLoginEmail($('#authAccountName').value):$('#authEmail').value.trim();if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');setAuthMessage('正在连接云端…');if(authMode==='recovery'){const{error}=await supabaseClient.auth.updateUser({password});if(error)return setAuthMessage(authErrorMessage(error));authMode='login';setAuthMessage('密码已更新，可以继续游戏。');renderAuth();return}const{error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)return setAuthMessage(authErrorMessage(error));setAuthMessage('登录成功，正在同步进度…');setTimeout(()=>$('#authModal').classList.remove('open'),700)};
+$('#loginBtn').onclick=async()=>{if(!verifyHuman())return;const password=$('#authPassword').value,email=authMethod==='account'?accountLoginEmail($('#authAccountName').value):$('#authEmail').value.trim();if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');const button=$('#loginBtn');button.disabled=true;setAuthMessage('正在加载云端登录组件…');try{await ensureSupabaseClient();setAuthMessage('正在连接云端…');if(authMode==='recovery'){const{error}=await supabaseClient.auth.updateUser({password});if(error)return setAuthMessage(authErrorMessage(error));authMode='login';setAuthMessage('密码已更新，可以继续游戏。');renderAuth();return}const{error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)return setAuthMessage(authErrorMessage(error));setAuthMessage('登录成功，正在同步进度…');setTimeout(()=>$('#authModal').classList.remove('open'),700)}catch(error){setAuthMessage(error?.message==='SUPABASE_SDK_UNAVAILABLE'?cloudUnavailableMessage():authErrorMessage(error))}finally{button.disabled=false}};
 let registrationBusy=false;
 $('#registerBtn').onclick=async()=>{
   if(registrationBusy)return setAuthMessage('注册请求正在处理中，请勿重复点击。');
@@ -833,6 +845,8 @@ $('#registerBtn').onclick=async()=>{
     name=$('#authAccountName').value.trim(),
     email=authMethod==='account'?accountLoginEmail(name):$('#authEmail').value.trim();
   if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');
+  setAuthMessage('正在加载云端登录组件…');
+  try{await ensureSupabaseClient()}catch(error){return setAuthMessage(cloudUnavailableMessage())}
   if(!beginAuthCooldown())return;
   registrationBusy=true;
   const controls=[$('#loginBtn'),$('#registerBtn'),$('#forgotBtn')];
@@ -861,7 +875,7 @@ $('#registerBtn').onclick=async()=>{
     updateAuthCooldown();
   }
 };
-$('#forgotBtn').onclick=async()=>{const email=$('#authEmail').value.trim();if(!email)return setAuthMessage('请先填写绑定的邮箱。');if(!beginAuthCooldown())return;setAuthMessage('正在发送找回邮件…');const redirectTo=authRedirectUrl();const{error}=await supabaseClient.auth.resetPasswordForEmail(email,redirectTo?{redirectTo}:undefined);setAuthMessage(error?authErrorMessage(error):'找回邮件已发送，请检查收件箱和垃圾邮件。请勿重复发送。')};
+$('#forgotBtn').onclick=async()=>{const email=$('#authEmail').value.trim();if(!email)return setAuthMessage('请先填写绑定的邮箱。');setAuthMessage('正在加载云端登录组件…');try{await ensureSupabaseClient()}catch(error){return setAuthMessage(cloudUnavailableMessage())}if(!beginAuthCooldown())return;setAuthMessage('正在发送找回邮件…');const redirectTo=authRedirectUrl();const{error}=await supabaseClient.auth.resetPasswordForEmail(email,redirectTo?{redirectTo}:undefined);setAuthMessage(error?authErrorMessage(error):'找回邮件已发送，请检查收件箱和垃圾邮件。请勿重复发送。')};
 $('#logoutBtn').onclick=async()=>{await saveCloudProgress();const{error}=await supabaseClient.auth.signOut();if(error)return setAuthMessage(error.message);$('#authModal').classList.remove('open');toast('已退出账号，本机进度仍然保留')};
 /* 语文模式：羊皮纸地图、分段背诵、诅咒与全文挑战 */
 state.subjectMode=state.subjectMode||'politics';state.chineseCurses=state.chineseCurses||[];state.chineseReviews=state.chineseReviews||{};state.chineseProgress=state.chineseProgress||{};state.chineseChallengeLocks=state.chineseChallengeLocks||{};state.chineseChallengeDays=state.chineseChallengeDays||{};state.chineseFullSuccessCount=state.chineseFullSuccessCount||0;state.chineseAchievements=state.chineseAchievements||[];
