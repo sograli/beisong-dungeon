@@ -1409,6 +1409,51 @@ syncSettingsUi=function(){if(state.mode==='challenge'||state.mode==='hard')state
 function updateArmorDescriptionsV102(){const descriptions={初级盔甲:'每次受到伤害时，有50%概率减少1点伤害',普通盔甲:'答对时伤害-1，答错时伤害+1',高级盔甲:'每次受到伤害均减少1点',知识武装:'每次受到伤害-1，有25%概率改为-2'};$$('.shop-item').forEach(row=>{const name=row.querySelector('b')?.textContent.trim(),effect=row.querySelector('.shop-effect');if(effect&&descriptions[name])effect.textContent=descriptions[name]})}
 const renderShopV102=renderShopExtras;renderShopExtras=function(){renderShopV102();updateArmorDescriptionsV102()};updateArmorDescriptionsV102();save();
 document.head.insertAdjacentHTML('beforeend',`<style>.battle-shields{display:flex;justify-content:center;gap:22px;margin:0 0 14px;min-height:58px}.battle-shield{position:relative;width:52px;height:56px;filter:drop-shadow(0 4px 7px #0008)}.battle-shield .shield-shape{position:absolute;inset:2px 4px 0;font-size:0;background:linear-gradient(145deg,#79d8ff,#267ed0 60%,#14558f);clip-path:polygon(50% 0,94% 16%,88% 68%,50% 100%,12% 68%,6% 16%);border-radius:8px}.battle-shield.yellow .shield-shape{background:linear-gradient(145deg,#fff08b,#e2b62f 60%,#9b7413)}.battle-shield.blocked{filter:grayscale(1);opacity:.55}.battle-shield.active .shield-shape{animation:shieldPulse 1.25s ease-in-out infinite}.battle-shield b,.battle-shield i{position:absolute;z-index:2;min-width:19px;height:19px;display:grid;place-items:center;border-radius:50%;background:#0e171c;color:#fff;font-size:11px;font-style:normal;border:1px solid #9edcff}.battle-shield .shield-count{right:-4px;top:-3px}.battle-shield i{right:-4px;bottom:-3px}.battle-shield.yellow b,.battle-shield.yellow i{border-color:#ffe16a;background:#2b2410}@keyframes shieldPulse{50%{transform:scale(1.08);filter:brightness(1.25)}}@media(max-width:600px){.battle-shields{margin-bottom:10px}.battle-shield{width:46px;height:50px}}</style>`);
+/* v103：进入游戏与切换模式时自动对准人物，语文人物回到起点。 */
+const CHINESE_START_X=115,CHINESE_START_Y=695;
+function focusPoliticsCharacter(){
+  if(!$('#homeView')?.classList.contains('active'))return;
+  scrollToPlayer(false);requestAnimationFrame(()=>scrollToPlayer(false));setTimeout(()=>scrollToPlayer(false),120)
+}
+function resetChineseCharacterAndCamera(){
+  state.chineseHeroX=CHINESE_START_X;state.chineseHeroY=CHINESE_START_Y;
+  const hero=$('#mapHero'),viewport=$('#parchmentViewport'),parchment=$('#parchment');
+  if(hero){hero.style.transition='none';hero.style.left=CHINESE_START_X+'px';hero.style.top=CHINESE_START_Y+'px'}
+  const focus=()=>{if(!viewport||!parchment)return;viewport.scrollLeft=Math.max(0,Math.min(parchment.offsetWidth-viewport.clientWidth,CHINESE_START_X+17-viewport.clientWidth/2));viewport.scrollTop=Math.max(0,Math.min(parchment.offsetHeight-viewport.clientHeight,CHINESE_START_Y+24-viewport.clientHeight/2))};
+  focus();requestAnimationFrame(focus);setTimeout(focus,100);save()
+}
+const openChineseMapAtStartBase=openChineseMap;
+openChineseMap=function(){state.chineseHeroX=CHINESE_START_X;state.chineseHeroY=CHINESE_START_Y;openChineseMapAtStartBase();resetChineseCharacterAndCamera()};
+function focusCurrentGameMode(){if(state.subjectMode==='chinese'){if(!$('#chineseMapView')?.classList.contains('active'))openChineseMap();else resetChineseCharacterAndCamera()}else focusPoliticsCharacter()}
+const dungeonEntryV103=$('#dungeonTab').onclick;
+$('#dungeonTab').onclick=()=>{dungeonEntryV103?.();setTimeout(focusCurrentGameMode,20)};
+const subjectSwitchV103=$('#subjectModeBtn').onclick;
+$('#subjectModeBtn').onclick=()=>{subjectSwitchV103?.();setTimeout(focusCurrentGameMode,20)};
+addEventListener('pageshow',()=>setTimeout(focusCurrentGameMode,80));
+setTimeout(focusCurrentGameMode,500);
+/* v104：政治战斗顺序调整为致盲填空、提示填写、整段默写。 */
+renderBattle=function(){
+  const lesson=currentLesson(),item=q(),total=lesson.questions.length,dot=$$('.round-dot');
+  dot.forEach((d,i)=>d.classList.toggle('on',i<battle.round));
+  $('#battleTitle').textContent=`${lesson.title} · 第 ${battle.round} 回合`;
+  const p=$('#battlePanel'),shields=shieldHudHtml();
+  if(battle.round===1){
+    const shared=lesson.sharedBlanks,sub=shared?null:item.subs[battle.subIndex],stem=shared?item.stem:sub.fill,answer=shared?item.answer:sub.a,subProgress=shared?'':` · ${battle.subIndex+1}/${item.subs.length}`;
+    p.innerHTML=`${shields}<div class="round-label">回合一 · 致盲填空 ${battle.qIndex+1}/${total}${subProgress}</div><div class="memory-question">${contentQuestion(item)}</div><div class="question">${stem.replace('____','<span class="blank">？？？</span>')}</div><div class="round-label">受到了致盲！在聊天框敲下答案后选择确认就可以了。</div><textarea class="answer-input" id="answerInput" placeholder="在聊天框敲下答案"></textarea><div class="action-row"><span class="hint">确认后才会解除致盲</span><button class="primary" id="submitBlind">确认</button></div>`;
+    $('#submitBlind').onclick=()=>checkWhite($('#answerInput').value,answer);return
+  }
+  if(battle.round===2){
+    const hintText=promptedHint(item.full);
+    p.innerHTML=`${shields}<div class="round-label">回合二 · 提示填写 ${battle.qIndex+1}/${total}</div><div class="memory-question">${contentQuestion(item)}</div><div class="question">${hintText}</div><textarea class="answer-input" id="fullInput" placeholder="根据问题和随机提示默写完整段落"></textarea><div class="action-row"><span class="hint">请根据随机文字提示完成默写</span><button class="primary" id="submitFull">确认</button></div>`;
+    $('#submitFull').onclick=()=>checkFull(item);return
+  }
+  p.innerHTML=`${shields}<div class="round-label">回合三 · 整段默写 ${battle.qIndex+1}/${total}</div><div class="memory-question">${contentQuestion(item)}</div><textarea class="answer-input" id="fullInput" placeholder="无提示默写这一问题对应的完整段落"></textarea><div class="action-row"><span class="hint">不提供原文提示，按完整段落进行智能批改</span><button class="primary" id="submitFull">确认</button></div>`;
+  $('#submitFull').onclick=()=>checkFull(item)
+};
+currentLensAnswer=function(){
+  if(battle.round===1)return currentLesson().sharedBlanks?q().answer:q().subs[battle.subIndex].a;
+  return q().full
+};
 </script>
 </body></html>
 
