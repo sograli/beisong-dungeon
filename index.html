@@ -1282,6 +1282,46 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 /* v98：登录成功后直接采用返回会话并主动读取云存档。 */
 let directLoginBusy=false;
 $('#loginBtn').onclick=async()=>{if(directLoginBusy)return;if(!verifyHuman())return;const password=$('#authPassword').value,email=authMethod==='account'?accountLoginEmail($('#authAccountName').value):$('#authEmail').value.trim();if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');const button=$('#loginBtn');directLoginBusy=true;button.disabled=true;setAuthMessage('正在加载云端登录组件…');try{await ensureSupabaseClient();setAuthMessage('正在连接云端…');if(authMode==='recovery'){const{data,error}=await supabaseClient.auth.updateUser({password});if(error)return setAuthMessage(authErrorMessage(error));authUser=data?.user||authUser;authMode='login';renderAuth();setAuthMessage('密码已更新，可以继续游戏。');return}const{data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)return setAuthMessage(authErrorMessage(error));const user=data?.user||data?.session?.user;if(!user)return setAuthMessage('登录服务器未返回账号会话，请刷新页面后重试。');authUser=user;authMode='login';renderAuth();setAuthMessage('登录成功，正在读取云存档…');await loadCloudProgress();renderAuth();if(cloudReady){setAuthMessage('登录成功，云存档已同步。');setTimeout(()=>$('#authModal').classList.remove('open'),700)}else setAuthMessage($('#authMessage').textContent||'账号已登录，但云存档读取失败，请检查数据库配置。')}catch(error){setAuthMessage(error?.message==='SUPABASE_SDK_UNAVAILABLE'?cloudUnavailableMessage():authErrorMessage(error))}finally{directLoginBusy=false;button.disabled=false}};
+/* v100：修正语文地图分支边界，并加入篇目关键字搜索。 */
+function repairChineseBranchLayout(){
+  const parchment=$('#parchment'),host=$('#mapNodes'),main=parchment?.querySelector('.map-road.main');
+  if(!parchment||!host||!main)return;
+  host.querySelectorAll('.map-road').forEach(road=>road.remove());
+  const mainY=720,themeX=[205,490,775,1060,1345,1630];
+  main.style.cssText=`left:110px;top:${mainY}px;width:1680px;height:18px`;
+  chineseThemes.forEach((theme,themeIndex)=>{
+    const upper=themeIndex%2===0,x=themeX[themeIndex],themeY=upper?430:990;
+    const themeNode=[...host.querySelectorAll('.map-node.theme')].find(node=>node.textContent.trim()===theme);
+    if(themeNode){themeNode.style.left=x+'px';themeNode.style.top=themeY+'px'}
+    const works=[...host.querySelectorAll('.map-node.work')].filter(node=>{
+      const work=chineseWorks.find(item=>item.title===node.textContent.trim());
+      return work?work.theme===themeIndex:themeIndex===chineseThemes.findIndex(item=>item===theme);
+    });
+    const spread=Math.min(250,Math.max(0,(works.length-1)*68)),start=x+56-spread/2;
+    const addRoad=(ax,ay,bx,by,width=8)=>{const road=document.createElement('div'),length=Math.hypot(bx-ax,by-ay),angle=Math.atan2(by-ay,bx-ax)*180/Math.PI;road.className='map-road';road.style.cssText=`left:${ax}px;top:${ay}px;width:${length}px;height:${width}px;transform:rotate(${angle}deg)`;host.prepend(road)};
+    addRoad(x+56,mainY+9,x+56,themeY+24,10);
+    works.forEach((node,index)=>{const rawX=start+(works.length===1?0:index*spread/(works.length-1))-26,nodeX=Math.max(80,Math.min(1760,rawX)),nodeY=upper?(index%2?335:245):(index%2?1080:1180);node.style.left=nodeX+'px';node.style.top=nodeY+'px';addRoad(x+56,themeY+24,nodeX+26,nodeY+26)});
+  });
+  renderChineseBrushRoads();
+}
+function chineseSearchText(work){return [work.title,work.author,chineseThemes[work.theme],work.idea,...(work.paragraphs||[]).flatMap(part=>[part.text,part.meaning,part.central])].filter(Boolean).join(' ').toLowerCase()}
+function moveChineseHeroToWork(work){
+  const viewport=$('#parchmentViewport'),parchment=$('#parchment'),hero=$('#mapHero'),node=[...$('#mapNodes').querySelectorAll('.map-node.work')].find(item=>item.textContent.trim()===work.title);
+  if(!viewport||!parchment||!hero||!node)return openChineseWork(work);
+  const fromX=parseFloat(hero.style.left)||115,fromY=parseFloat(hero.style.top)||695,toX=parseFloat(node.style.left)+9,toY=parseFloat(node.style.top)+2,start=performance.now(),duration=Math.max(420,Math.min(1200,Math.hypot(toX-fromX,toY-fromY)*2));
+  toast('正在前往《'+work.title+'》');
+  function frame(now){const raw=Math.min(1,(now-start)/duration),t=raw<.5?2*raw*raw:1-Math.pow(-2*raw+2,2)/2,x=fromX+(toX-fromX)*t,y=fromY+(toY-fromY)*t;hero.style.left=x+'px';hero.style.top=y+'px';viewport.scrollLeft=Math.max(0,Math.min(parchment.offsetWidth-viewport.clientWidth,x-viewport.clientWidth/2));viewport.scrollTop=Math.max(0,Math.min(parchment.offsetHeight-viewport.clientHeight,y-viewport.clientHeight/2));if(raw<1)return requestAnimationFrame(frame);state.chineseHeroX=Math.round(toX);state.chineseHeroY=Math.round(toY);save();openChineseWork(work)}requestAnimationFrame(frame)
+}
+function createChineseSearch(){
+  const view=$('#chineseMapView');if(!view||$('#chineseSearchBtn'))return;
+  view.insertAdjacentHTML('beforeend','<button class="cn-search-btn" id="chineseSearchBtn" title="搜索单元或篇目" aria-label="搜索单元或篇目">🔍</button>');
+  document.body.insertAdjacentHTML('beforeend','<div class="modal" id="chineseSearchModal"><div class="modal-box cn-search-box"><div class="action-row"><div><div class="eyebrow">语文地图</div><h2>搜索单元或篇目</h2></div><button class="back" id="closeChineseSearch">× 关闭</button></div><input id="chineseSearchInput" class="cn-search-input" placeholder="输入篇名、作者、单元或正文关键字" autocomplete="off"><div id="chineseSearchResults" class="cn-search-results"></div></div></div>');
+  const modal=$('#chineseSearchModal'),input=$('#chineseSearchInput'),results=$('#chineseSearchResults');
+  const render=()=>{const keyword=input.value.trim().toLowerCase();if(!keyword){results.innerHTML='<p class="hint">输入关键字开始查找</p>';return}const matches=chineseWorks.map((work,index)=>({work,index})).filter(item=>chineseSearchText(item.work).includes(keyword)).slice(0,30);results.innerHTML=matches.length?matches.map(({work,index})=>`<button class="cn-search-result" data-cn-search="${index}"><b>${work.title}</b><span>${work.author||'佚名'} · ${chineseThemes[work.theme]||'古诗文'}</span></button>`).join(''):'<p class="hint">没有找到对应单元或篇目</p>';results.querySelectorAll('[data-cn-search]').forEach(button=>button.onclick=()=>{const work=chineseWorks[Number(button.dataset.cnSearch)];if(!work)return;modal.classList.remove('open');openChineseMap();setTimeout(()=>moveChineseHeroToWork(work),80)})};
+  $('#chineseSearchBtn').onclick=()=>{modal.classList.add('open');input.value='';render();setTimeout(()=>input.focus(),50)};$('#closeChineseSearch').onclick=()=>modal.classList.remove('open');modal.addEventListener('click',event=>{if(event.target===modal)modal.classList.remove('open')});input.addEventListener('input',render)
+}
+document.head.insertAdjacentHTML('beforeend',`<style>.cn-search-btn{position:absolute;right:18px;top:78px;z-index:42;width:46px;height:46px;border:1px solid #b78b42;background:#fff8df;color:#21170d;font-size:21px;display:grid;place-items:center;cursor:pointer;box-shadow:0 5px 16px #0007}.cn-search-box{width:min(620px,100%);max-height:82svh;overflow:auto}.cn-search-input{width:100%;margin:14px 0;padding:13px;border:1px solid #9b793c;background:#fffdf4;color:#17130c}.cn-search-results{display:grid;gap:7px}.cn-search-result{display:flex;justify-content:space-between;gap:12px;align-items:center;width:100%;padding:12px;border:1px solid #9d7c43;background:#fff8e3;color:#21170d;text-align:left;cursor:pointer}.cn-search-result span{font-size:12px;color:#705b38}@media(max-width:600px){.cn-search-btn{right:12px;top:112px;width:42px;height:42px}.cn-search-result{align-items:flex-start;flex-direction:column}}</style>`);
+repairChineseBranchLayout();createChineseSearch();
 </script>
 </body></html>
 
