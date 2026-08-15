@@ -1454,6 +1454,32 @@ currentLensAnswer=function(){
   if(battle.round===1)return currentLesson().sharedBlanks?q().answer:q().subs[battle.subIndex].a;
   return q().full
 };
+/* v105：祝福选择与首页祝福球均可查看完整效果。 */
+if(!$('#blessingDetailModal'))document.body.insertAdjacentHTML('beforeend','<div class="modal" id="blessingDetailModal"><div class="modal-box blessing-detail-box"><div class="action-row"><div><div class="eyebrow">蚁王祝福</div><h2 id="blessingDetailTitle">祝福详情</h2></div><button class="back" id="closeBlessingDetail">× 关闭</button></div><div id="blessingDetailBody"></div></div></div>');
+function blessingLevelText(key,count){const item=blessingCatalog[key];return key==='ascetic'?`已完成 ${count} 次`:`当前 ${count}/${item.max} 层`}
+function currentBlessingEffect(key,count){const effects={life:`生命上限 +${count*5}%`,defense:`受伤时减伤1的触发概率 +${count*20}%`,coin:`金币收益 +${count*10}%`,critical:`施法效果翻倍概率 +${count*5}%`,casting:`每次净化或生长固定加成 +${count}`,magic:`获得施法次数时额外+1的概率 +${count*5}%`,luck:`高级奖励概率 +${count*3}%，隐藏奖励概率 +${count}%`,experience:`充能时额外经验 +${count*10}%`,ascetic:`已完成苦修 ${count} 次`};return effects[key]||blessingCatalog[key]?.effect||''}
+function openBlessingDetail(key){
+  const item=blessingCatalog[key];if(!item)return;
+  const count=state.blessings[key]||0,total=currentBlessingEffect(key,count);
+  $('#blessingDetailTitle').textContent=item.name;
+  $('#blessingDetailBody').innerHTML=`<div class="blessing-detail-hero"><i class="blessing-orb">${item.name[0]}<sup>${count}</sup></i><div><b>${blessingLevelText(key,count)}</b><p>${item.effect}</p></div></div>${count>0&&key!=='ascetic'?`<div class="blessing-current-effect"><span>当前叠加效果</span><b>${total}</b></div>`:''}`;
+  $('#blessingDetailModal').classList.add('open')
+}
+$('#closeBlessingDetail').onclick=()=>$('#blessingDetailModal').classList.remove('open');
+$('#blessingDetailModal').addEventListener('click',event=>{if(event.target.id==='blessingDetailModal')$('#blessingDetailModal').classList.remove('open')});
+renderBlessingHud=function(){
+  let hud=$('#blessingHud');if(!hud){document.body.insertAdjacentHTML('beforeend','<div class="blessing-hud" id="blessingHud"></div>');hud=$('#blessingHud')}
+  hud.innerHTML=Object.entries(state.blessings).filter(([,count])=>count>0).map(([key,count])=>`<button class="blessing-orb blessing-hud-button" data-view-blessing="${key}" title="查看${blessingCatalog[key].name}效果" aria-label="查看${blessingCatalog[key].name}效果">${blessingCatalog[key].name[0]}<sup>${count}</sup></button>`).join('');
+  hud.querySelectorAll('[data-view-blessing]').forEach(button=>button.onclick=()=>openBlessingDetail(button.dataset.viewBlessing))
+};
+openBlessingChoice=function(){
+  if(state.blessingPending<1||$('#blessingModal').classList.contains('open')||$('#lootModal').classList.contains('open'))return;
+  const choices=blessingPool();
+  $('#blessingChoices').innerHTML=choices.map(key=>{const item=blessingCatalog[key],count=state.blessings[key]||0;return `<button class="blessing-choice" data-blessing-choice="${key}"><span class="blessing-choice-head"><i class="blessing-orb">${item.name[0]}</i><b>${item.name}</b></span><span class="blessing-choice-effect"><strong>祝福效果</strong>${item.effect}</span><small class="blessing-choice-level">${blessingLevelText(key,count)}</small></button>`}).join('');
+  $$('[data-blessing-choice]').forEach(button=>button.onclick=()=>selectBlessing(button.dataset.blessingChoice));$('#blessingModal').classList.add('open')
+};
+document.head.insertAdjacentHTML('beforeend',`<style>#blessingModal .modal-box{width:min(720px,100%);max-height:90svh;overflow:auto}.blessing-choice{display:flex!important;flex-direction:column;align-items:stretch;min-height:190px;color:#f4ead0!important}.blessing-choice-head{flex:0 0 auto}.blessing-choice-head b{font-size:17px;color:#ffe17a}.blessing-choice-effect{display:block!important;visibility:visible!important;opacity:1!important;flex:1;padding:12px;margin:2px 0 12px;background:#121713;border-left:3px solid #e7b827;color:#edf0e9!important;font-size:13px!important;line-height:1.75;white-space:normal}.blessing-choice-effect strong{display:block;color:#e7b827;margin-bottom:4px}.blessing-choice-level{display:block!important;color:#d9c894!important;font-size:12px}.blessing-hud-button{padding:0;cursor:pointer;font-family:inherit}.blessing-hud-button:focus-visible{outline:3px solid #fff2a6;outline-offset:3px}.blessing-detail-box{width:min(560px,100%)}.blessing-detail-hero{display:grid;grid-template-columns:58px 1fr;gap:15px;align-items:center;padding:16px 0}.blessing-detail-hero .blessing-orb{width:52px;height:52px;font-size:20px}.blessing-detail-hero p{margin:7px 0 0;color:#dce4de;line-height:1.8}.blessing-current-effect{border:1px solid #8b6d24;background:#121713;padding:14px;display:grid;gap:6px}.blessing-current-effect span{font-size:12px;color:#e7b827}.blessing-current-effect b{line-height:1.7}@media(max-width:600px){#blessingModal{align-items:start;overflow:auto;padding-top:8svh}.blessing-choice{min-height:165px}.blessing-detail-box{max-height:88svh;overflow:auto}}</style>`);
+renderBlessingHud();
 </script>
 </body></html>
 
