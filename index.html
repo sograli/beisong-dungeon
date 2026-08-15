@@ -1322,6 +1322,93 @@ function createChineseSearch(){
 }
 document.head.insertAdjacentHTML('beforeend',`<style>.cn-search-btn{position:absolute;right:18px;top:78px;z-index:42;width:46px;height:46px;border:1px solid #b78b42;background:#fff8df;color:#21170d;font-size:21px;display:grid;place-items:center;cursor:pointer;box-shadow:0 5px 16px #0007}.cn-search-box{width:min(620px,100%);max-height:82svh;overflow:auto}.cn-search-input{width:100%;margin:14px 0;padding:13px;border:1px solid #9b793c;background:#fffdf4;color:#17130c}.cn-search-results{display:grid;gap:7px}.cn-search-result{display:flex;justify-content:space-between;gap:12px;align-items:center;width:100%;padding:12px;border:1px solid #9d7c43;background:#fff8e3;color:#21170d;text-align:left;cursor:pointer}.cn-search-result span{font-size:12px;color:#705b38}@media(max-width:600px){.cn-search-btn{right:12px;top:112px;width:42px;height:42px}.cn-search-result{align-items:flex-start;flex-direction:column}}</style>`);
 repairChineseBranchLayout();createChineseSearch();
+/* v101：政治选择题按“是什么、为什么、怎么做”生成同类混淆项。 */
+function politicsQuestionLogic(item){
+  const prompt=String(item.question||contentQuestion(item)||''),context=`${prompt} ${item.stem||''}`;
+  if(/为什么|为何|原因|依据|根源|动因|必要性|重要性|意义/.test(prompt))return'why';
+  if(/如何|怎么|怎样|哪些措施|什么措施|途径|做法|要求/.test(prompt))return'how';
+  if(/是什么|什么是|哪些内容|包括哪些|体现在哪|有何/.test(prompt))return'what';
+  if(/原因|依据|基础|根源|根本动因|必要性|重要性|意义|有利于|旨在/.test(context))return'why';
+  if(/应该|应当|必须|需要|通过|坚持|推动|促进|完善|加强|建设|实现|维护|保障/.test(context))return'how';
+  return'what';
+}
+function uniqueWrongOptions(correct,candidates){
+  const answer=String(correct||''),seen=new Set([norm(answer)]),result=[];
+  for(const candidate of candidates){const value=String(candidate||'').trim();if(!value||seen.has(norm(value)))continue;seen.add(norm(value));result.push(value);if(result.length===3)break}
+  return result;
+}
+function logicDistractors(item){
+  const correct=String(item.answer||''),logic=politicsQuestionLogic(item),base=generatedDistractors(correct),subject=(String(item.full||item.stem||'').replace(/____/g,correct).split(/[，。；]/)[0]||'该知识点').replace(correct,'').replace(/是$|要$|应$|通过$/,'').trim();
+  const termSwaps=[['根本','重要'],['根本','基本'],['基本','根本'],['主体','主导'],['主导','主体'],['决定','影响'],['决定性','基础性'],['核心','关键'],['首要','主要'],['公有制','非公有制'],['国有经济','集体经济'],['人民','公民'],['共同富裕','同步富裕'],['国家','社会'],['政府','市场'],['权利','义务'],['政治','经济'],['经济','文化'],['制度','机制'],['原则','目标'],['保障','动力'],['基础','条件']];
+  const swapped=[];for(const[from,to]of termSwaps)if(correct.includes(from))swapped.push(correct.replace(from,to));
+  const pools={
+    what:[`${subject}的一般表现`,`${subject}的辅助形式`,`${subject}的阶段性特征`,`${subject}的次要组成部分`],
+    why:[`这是由当前的具体条件决定的`, `这是实现局部利益的直接需要`, `这有利于发挥一般性辅助作用`, `这能为短期发展提供外部条件`],
+    how:[`主要依靠单一主体自行完成`, `通过放松必要约束来扩大自主空间`, `把短期目标作为全部工作的出发点`, `以局部措施代替系统推进`]
+  };
+  const suffix=[];
+  if(logic==='why')suffix.push(`${correct}是其直接原因`,`${correct}提供了外部条件`,`${correct}具有阶段性意义`);
+  if(logic==='how')suffix.push(`弱化${correct}`,`仅依靠${correct}`,`用局部调整代替${correct}`);
+  if(logic==='what')suffix.push(`${correct}的补充形式`,`${correct}的次要表现`,`${correct}的外部条件`);
+  return uniqueWrongOptions(correct,[...swapped,...base,...suffix,...pools[logic]]);
+}
+firstRoundChoices=function(item){
+  const correct=String(item.answer||''),wrong=logicDistractors(item),logic=politicsQuestionLogic(item),fallback=logic==='why'?['这是由偶然因素单独造成的','这只对短期局部利益有作用','这是外部环境变化的唯一结果']:logic==='how'?['只依靠单一手段推进','以局部做法代替整体安排','减少必要保障和制度约束']:['一般性的辅助形式','阶段性的次要特征','外部环境形成的条件'];
+  const choices=uniqueWrongOptions(correct,[...wrong,...fallback]);
+  return shuffle([correct,...choices.slice(0,3)])
+};
+/* v102：政治首回合整段默写、连击护盾与盔甲平衡调整。 */
+if(state.mode==='challenge'||state.mode==='hard')state.mode='normal';
+['challenge','hard'].forEach(value=>$('#modeSetting')?.querySelector(`option[value="${value}"]`)?.remove());
+const beginBattleBeforeShields=beginBattle;
+beginBattle=function(){beginBattleBeforeShields();battle.blueStreak=0;battle.blueActive=false;battle.yellowStreak=0;battle.yellowCharges=0;renderBattle()};
+function shieldHudHtml(){
+  const blueBlocked=(battle.yellowCharges||0)>0,yellowBlocked=!!battle.blueActive;
+  const blueTop=blueBlocked?'❌️':(battle.blueActive?'':String(battle.blueStreak||0));
+  const yellowTop=yellowBlocked?'❌️':((battle.yellowCharges||0)>0?'':String(battle.yellowStreak||0));
+  return `<div class="battle-shields" aria-label="战斗护盾"><div class="battle-shield blue ${blueBlocked?'blocked':''} ${battle.blueActive?'active':''}" title="连续答对3题后，受到伤害-1"><span class="shield-shape">◆</span>${blueTop!==''?`<b class="shield-count">${blueTop}</b>`:''}<i>-1</i></div><div class="battle-shield yellow ${yellowBlocked?'blocked':''} ${(battle.yellowCharges||0)>0?'active':''}" title="连续答错3题后，免疫2次伤害"><span class="shield-shape">◆</span>${yellowTop!==''?`<b class="shield-count">${yellowTop}</b>`:''}${(battle.yellowCharges||0)>0?`<i>${battle.yellowCharges}</i>`:''}</div></div>`
+}
+function updateShieldHud(){const old=$('#battlePanel .battle-shields');if(old)old.outerHTML=shieldHudHtml()}
+function recordShieldAnswer(correct,shieldLockout=false){
+  if(shieldLockout)return;
+  if(correct){
+    if((battle.yellowCharges||0)>0)return;
+    battle.yellowStreak=0;
+    if(!battle.blueActive){battle.blueStreak=(battle.blueStreak||0)+1;if(battle.blueStreak>=3){battle.blueStreak=0;battle.blueActive=true;toast('蓝盾激活：受到伤害 -1，答错后消失')}}
+  }else{
+    if(battle.blueActive){battle.blueActive=false;battle.blueStreak=0;battle.yellowStreak=0;toast('回答错误，蓝盾已消失');return}
+    if((battle.yellowCharges||0)>0)return;
+    battle.blueStreak=0;battle.yellowStreak=(battle.yellowStreak||0)+1;
+    if(battle.yellowStreak>=3){battle.yellowStreak=0;battle.yellowCharges=2;toast('黄盾激活：接下来免疫2次伤害')}
+  }
+}
+spendBattleHp=function(correct){
+  const armor=state.armor||'none',base=correct?2:3,yellowWasActive=(battle.yellowCharges||0)>0;let damage=base,armorText='';
+  if(yellowWasActive){damage=0;battle.yellowCharges--;armorText='黄盾免疫了本次伤害';if(battle.yellowCharges<=0)battle.yellowCharges=0}
+  else{
+    if(armor==='basic'&&Math.random()<.5){damage=Math.max(0,damage-1);armorText='初级盔甲触发'}
+    else if(armor==='ordinary'){damage=Math.max(0,damage+(correct?-1:1));armorText=correct?'普通盔甲减伤':'普通盔甲使伤害增加'}
+    else if(armor==='advanced'){damage=Math.max(0,damage-1);armorText='高级盔甲减伤'}
+    else if(armor==='knowledge'){const reduction=Math.random()<.25?2:1;damage=Math.max(0,damage-reduction);armorText=`知识武装减伤 ${reduction}`}
+    if(battle.blueActive)damage=Math.max(0,damage-1);
+    const chance=(state.blessings?.defense||0)*20;if(damage>0&&chance&&Math.random()*100<chance){damage=Math.max(0,damage-1);armorText=armorText?armorText+'，防御强化触发':'防御强化触发'}
+  }
+  state.hp-=damage;recordShieldAnswer(correct,yellowWasActive);save();updateShieldHud();toast(`${armorText?armorText+'，':''}${damage?`生命 -${damage}`:'未受到伤害'}`);return state.hp>0
+};
+const renderBattleWithShieldsBase=renderBattle;
+renderBattle=function(){
+  if(battle.round===1){
+    const lesson=currentLesson(),item=q(),total=lesson.questions.length,dot=$$('.round-dot');dot.forEach((d,i)=>d.classList.toggle('on',i<battle.round));$('#battleTitle').textContent=`${lesson.title} · 第 1 回合`;
+    $('#battlePanel').innerHTML=`${shieldHudHtml()}<div class="round-label">回合一 · 整段默写 ${battle.qIndex+1}/${total}</div><div class="memory-question">${contentQuestion(item)}</div><textarea class="answer-input" id="fullInput" placeholder="默写这一问题对应的完整段落"></textarea><div class="action-row"><span class="hint">不提供原文提示，按完整段落进行智能批改</span><button class="primary" id="submitFull">确认</button></div>`;
+    $('#submitFull').onclick=()=>checkFull(item);return
+  }
+  renderBattleWithShieldsBase();$('#battlePanel').insertAdjacentHTML('afterbegin',shieldHudHtml())
+};
+const syncSettingsWithoutLegacyModes=syncSettingsUi;
+syncSettingsUi=function(){if(state.mode==='challenge'||state.mode==='hard')state.mode='normal';syncSettingsWithoutLegacyModes();['challenge','hard'].forEach(value=>$('#modeSetting')?.querySelector(`option[value="${value}"]`)?.remove())};
+function updateArmorDescriptionsV102(){const descriptions={初级盔甲:'每次受到伤害时，有50%概率减少1点伤害',普通盔甲:'答对时伤害-1，答错时伤害+1',高级盔甲:'每次受到伤害均减少1点',知识武装:'每次受到伤害-1，有25%概率改为-2'};$$('.shop-item').forEach(row=>{const name=row.querySelector('b')?.textContent.trim(),effect=row.querySelector('.shop-effect');if(effect&&descriptions[name])effect.textContent=descriptions[name]})}
+const renderShopV102=renderShopExtras;renderShopExtras=function(){renderShopV102();updateArmorDescriptionsV102()};updateArmorDescriptionsV102();save();
+document.head.insertAdjacentHTML('beforeend',`<style>.battle-shields{display:flex;justify-content:center;gap:22px;margin:0 0 14px;min-height:58px}.battle-shield{position:relative;width:52px;height:56px;filter:drop-shadow(0 4px 7px #0008)}.battle-shield .shield-shape{position:absolute;inset:2px 4px 0;font-size:0;background:linear-gradient(145deg,#79d8ff,#267ed0 60%,#14558f);clip-path:polygon(50% 0,94% 16%,88% 68%,50% 100%,12% 68%,6% 16%);border-radius:8px}.battle-shield.yellow .shield-shape{background:linear-gradient(145deg,#fff08b,#e2b62f 60%,#9b7413)}.battle-shield.blocked{filter:grayscale(1);opacity:.55}.battle-shield.active .shield-shape{animation:shieldPulse 1.25s ease-in-out infinite}.battle-shield b,.battle-shield i{position:absolute;z-index:2;min-width:19px;height:19px;display:grid;place-items:center;border-radius:50%;background:#0e171c;color:#fff;font-size:11px;font-style:normal;border:1px solid #9edcff}.battle-shield .shield-count{right:-4px;top:-3px}.battle-shield i{right:-4px;bottom:-3px}.battle-shield.yellow b,.battle-shield.yellow i{border-color:#ffe16a;background:#2b2410}@keyframes shieldPulse{50%{transform:scale(1.08);filter:brightness(1.25)}}@media(max-width:600px){.battle-shields{margin-bottom:10px}.battle-shield{width:46px;height:50px}}</style>`);
 </script>
 </body></html>
 
