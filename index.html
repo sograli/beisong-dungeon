@@ -1652,6 +1652,30 @@ renderParagraphRecite=function(paragraph){
   $('#cnSubmit').onclick=()=>{const input=$('#cnAnswer').value,ok=cnNorm(input)===cnNorm(paragraph.text);if(ok)return finishChineseLevel(true);if(cnSession.greenShieldReady&&!cnSession.greenShieldUsed){cnSession.greenShieldUsed=true;$('#cnAnswer').disabled=true;$('#cnSubmit').disabled=true;$('#greenShieldFeedback').innerHTML=`<div class="review-correction green-correction"><b>绿盾抵挡了诅咒，错误处已标红</b><br>${reviewDiff(input,paragraph.text)}<br><b>正确内容：</b>${escapeHtml(paragraph.text)}<br><button class="primary" id="greenRetry">确认并重新作答</button></div>`;$('#greenRetry').onclick=()=>{$('#cnAnswer').value='';$('#cnAnswer').disabled=false;$('#cnSubmit').disabled=false;$('#greenShieldFeedback').innerHTML='';$('#cnAnswer').focus();toast('绿盾已消耗，请重新默写这一段')};return}addCurse(cnSession.work,'整段',`默写《${cnSession.work.title}》第${number}段`,paragraph.text);finishChineseLevel(false)}
 };
 document.head.insertAdjacentHTML('beforeend',`<style>.tree-scene>.clouds{display:none!important}.curse-cost-rule{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:12px 0;padding:13px;border:1px solid #6b5840;background:#211d17;border-radius:8px}.curse-cost-rule b{color:#f3d780}.curse-cost-rule span{color:#d7d0c3}.curse-refuse{border-color:#b54c45!important;color:#ffb0a8!important}.green-correction{border-color:#48b86e!important;background:#13271a!important}</style>`);
+/* 内容保护：降低直接复制、整页嵌入、打印和截图后无来源传播的便利度。 */
+function protectionIdentity(){
+  const raw=String(state.playerId||state.displayName||authUser?.email||authUser?.id||'访客');
+  let hash=2166136261;for(const char of raw)hash=Math.imul(hash^char.charCodeAt(0),16777619);
+  return `背诵地牢 · ${raw.slice(0,8)} · ${(hash>>>0).toString(36).toUpperCase()}`
+}
+function refreshProtectionWatermark(){
+  let layer=$('#contentProtectionMark');if(!layer){layer=document.createElement('div');layer.id='contentProtectionMark';layer.setAttribute('aria-hidden','true');document.body.append(layer)}
+  const canvas=document.createElement('canvas');canvas.width=360;canvas.height=220;const ctx=canvas.getContext('2d');
+  ctx.translate(42,142);ctx.rotate(-Math.PI/7);ctx.font='600 15px sans-serif';ctx.fillStyle='rgba(255,255,255,.055)';ctx.fillText(protectionIdentity(),0,0);
+  layer.style.backgroundImage=`url(${canvas.toDataURL('image/png')})`
+}
+refreshProtectionWatermark();setInterval(refreshProtectionWatermark,60000);
+document.addEventListener('keydown',event=>{
+  if(isEditableCopyTarget(event.target))return;
+  const key=event.key.toLowerCase(),blocked=(event.ctrlKey||event.metaKey)&&['s','u','p','c','x'].includes(key)||event.key==='F12';
+  if(!blocked)return;event.preventDefault();event.stopPropagation();toast('此操作已被内容保护功能限制')
+},true);
+document.addEventListener('dragstart',event=>{if(event.target instanceof Element&&event.target.closest('img,svg,canvas')&&!event.target.closest('.card'))event.preventDefault()},true);
+try{if(window.top!==window.self)window.top.location=window.self.location.href}catch{document.documentElement.innerHTML=''}
+document.head.insertAdjacentHTML('beforeend',`<style>
+#contentProtectionMark{position:fixed;inset:0;z-index:2147483000;pointer-events:none;background-repeat:repeat;mix-blend-mode:screen}
+@media print{body>*{display:none!important}body:after{content:'背诵地牢内容受保护，禁止打印或导出。';display:grid;place-items:center;height:100vh;color:#111;font:700 20px sans-serif}}
+</style>`);
 </script>
 </body></html>
 

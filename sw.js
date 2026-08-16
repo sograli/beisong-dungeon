@@ -1,4 +1,4 @@
-const CACHE = 'beisong-dungeon-v114';
+const CACHE = 'beisong-dungeon-v115';
 const ASSETS = ['./', './index.html', './chinese-content.js', './manifest.webmanifest', './app-icon.svg'];
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
