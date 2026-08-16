@@ -1578,6 +1578,27 @@ function currentPoliticalQuestionV108(){
 }
 const renderBattleQuestionV108=renderBattle;
 renderBattle=function(){renderBattleQuestionV108();const question=$('#battlePanel .memory-question');if(question){question.textContent=currentPoliticalQuestionV108();if(state.showBattleQuestions===false)question.remove()}};
+/* v111：语文绿盾、护盾说明与逐段默写提示。 */
+function showShieldEffect(type){
+  const effects={blue:'蓝盾：连续答对3题后激活。激活期间每次受到的伤害减少1点，答错后消失。',yellow:'黄盾：连续答错3题后激活，可以免疫接下来的2次伤害。',green:'绿盾：分段关卡前两个阶段全部答对后获得，可在整段默写中免疫1次诅咒。'};
+  toast(effects[type]||'暂无护盾说明')
+}
+const shieldHudHtmlV111=shieldHudHtml;
+shieldHudHtml=function(){return shieldHudHtmlV111().replace('class="battle-shield blue','onclick="showShieldEffect(\'blue\')" role="button" tabindex="0" class="battle-shield blue').replace('class="battle-shield yellow','onclick="showShieldEffect(\'yellow\')" role="button" tabindex="0" class="battle-shield yellow')};
+const startChineseLevelV111=startChineseLevel;
+startChineseLevel=function(level){startChineseLevelV111(level);if(cnSession&&cnSession.type==='paragraph'){cnSession.greenShieldEligible=true;cnSession.greenShieldReady=false;cnSession.greenShieldUsed=false}};
+const renderWordsV111=renderWords;
+renderWords=function(paragraph){if(cnSession&&cnSession.type==='paragraph'&&(cnSession.wordIndex||0)>=paragraph.words.length&&cnSession.greenShieldEligible){cnSession.greenShieldReady=true}renderWordsV111(paragraph)};
+function chineseGreenShieldHtml(){if(!cnSession?.greenShieldReady||cnSession.greenShieldUsed)return'';return`<div class="battle-shields chinese-shields"><div onclick="showShieldEffect('green')" role="button" tabindex="0" class="battle-shield green active" title="点击查看绿盾效果"><span class="shield-shape">◆</span><i>1</i></div></div>`}
+renderParagraphRecite=function(paragraph){
+  const number=cnSession.paragraphIndex+1,hint=[...paragraph.text].map(char=>/[，。！？；：]/.test(char)?char:'□').join('');
+  $('#cnStageLabel').textContent='分段 · 整段默写';
+  $('#cnBattleBody').innerHTML=`${chineseGreenShieldHtml()}<p class="recite-segment-label">请默出第${number}段</p><div class="clause-hint">${hint}</div><textarea class="answer-input" id="cnAnswer" placeholder="默写第${number}段"></textarea><button class="primary" id="cnSubmit">确认</button>`;
+  $('#cnSubmit').onclick=()=>{const ok=cnNorm($('#cnAnswer').value)===cnNorm(paragraph.text);if(ok)return finishChineseLevel(true);if(cnSession.greenShieldReady&&!cnSession.greenShieldUsed){cnSession.greenShieldUsed=true;toast('绿盾已消耗，本次未受到诅咒');return setTimeout(leaveChineseLevel,650)}addCurse(cnSession.work,'整段',`默写《${cnSession.work.title}》第${number}段`,paragraph.text);finishChineseLevel(false)}
+};
+const renderFullChallengeV111=renderFullChallenge;
+renderFullChallenge=function(){renderFullChallengeV111();const input=$('#cnBattleBody #cnAnswer');if(input&&!$('#cnBattleBody .recite-segment-label'))input.insertAdjacentHTML('beforebegin',`<p class="recite-segment-label">请默出第${cnSession.paragraphIndex+1}段</p>`)};
+document.head.insertAdjacentHTML('beforeend',`<style>.battle-shield{cursor:pointer}.battle-shield:focus-visible{outline:2px solid #fff;outline-offset:3px}.battle-shield.green .shield-shape{background:linear-gradient(145deg,#9cf3b1,#35ad63 60%,#16753b)}.battle-shield.green i{border-color:#91edab;background:#102b19}.chinese-shields{margin-bottom:8px}.recite-segment-label{margin:8px 0;color:#f4e7ba;font-weight:700;font-size:16px}</style>`);
 </script>
 </body></html>
 
