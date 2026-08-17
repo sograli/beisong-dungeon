@@ -1928,6 +1928,109 @@ $('#finishRaidPractice').onclick=()=>{if(!raidPractice)return;const type=raidPra
 const stopRaidV141=stopRaid;stopRaid=function(){raidPractice=null;$('#raidPracticeGuide')&&($('#raidPracticeGuide').hidden=true);$$('.raid-practice-target').forEach(element=>element.classList.remove('raid-practice-target'));stopRaidV141()};
 renderHomestead();
 </script>
+<script>
+// Pacman controls and collection rules: button input, no invulnerability, and visible collected text.
+const pacControls=document.querySelector('.pacman-controls');
+if(pacControls){
+  pacControls.innerHTML='<div class="pacman-key-group pacman-key-vertical"><button data-pac-dir="up" aria-label="向上">↑</button><button data-pac-dir="down" aria-label="向下">↓</button></div><div class="pacman-key-group pacman-key-horizontal"><button data-pac-dir="left" aria-label="向左">←</button><button data-pac-dir="right" aria-label="向右">→</button></div>';
+  let holdTimer=null;
+  const stopHold=()=>{clearInterval(holdTimer);holdTimer=null};
+  pacControls.querySelectorAll('[data-pac-dir]').forEach(button=>{
+    button.addEventListener('pointerdown',event=>{event.preventDefault();stopHold();pacSetDirection(button.dataset.pacDir);holdTimer=setInterval(()=>pacSetDirection(button.dataset.pacDir),120)});
+    button.addEventListener('pointerup',stopHold);
+    button.addEventListener('pointercancel',stopHold);
+    button.addEventListener('pointerleave',stopHold);
+  });
+}
+const pacHead=document.querySelector('.pacman-head');
+if(pacHead&&!document.querySelector('#pacmanFound'))pacHead.insertAdjacentHTML('afterend','<div id="pacmanFound" class="pacman-found" aria-label="已找到的文字"></div>');
+function renderPacmanFound(){
+  const box=document.querySelector('#pacmanFound'),g=pacGame;
+  if(!box||!g)return;
+  box.innerHTML=g.chars.map((char,index)=>`<span class="${index<g.collected?'found':''}">${char}</span>`).join('');
+}
+const startPacmanRaidV146=startPacmanRaid;
+startPacmanRaid=function(skipTutorial=false){
+  startPacmanRaidV146(skipTutorial);
+  if(pacGame&&!pacGame.tutorial){pacGame.safeUntil=0;pacGame.poweredUntil=0;pacGame.ghostMoveAt=Date.now()+5000;renderPacmanFound();toast('幽灵将在5秒后开始移动')}
+};
+pacTutorialMessages.splice(0,pacTutorialMessages.length,'按右键移动一格。','现在按下键。','接着按左键。','最后按上键回到起点。','向右收集文字；碰到顺序错误的字不会生效。','教学完成。正式关卡要严格按顺序收集全部文字。');
+showPacmanTutorialStep=function(){const step=pacGame?.tutorialStep||0;$('#pacmanTutorialBox').hidden=false;$('#pacmanTutorialText').textContent=pacTutorialMessages[step]||pacTutorialMessages.at(-1);$('#finishPacmanTutorial').hidden=step<5};
+pacResolveGhostCollision=function(ghost){
+  const g=pacGame;
+  if(!g?.active||ghost.x!==g.player.x||ghost.y!==g.player.y)return false;
+  if(g.tutorial){ghost.x=ghost.home.x;ghost.y=ghost.home.y;return true}
+  failPacmanRaid();return true;
+};
+pacAfterPlayerMove=function(){
+  const g=pacGame;if(!g?.active)return;
+  const key=`${g.player.x},${g.player.y}`;
+  const letter=g.letters.find(item=>item.x===g.player.x&&item.y===g.player.y&&item.index===g.collected);
+  g.dots.delete(key);
+  for(const ghost of g.ghosts)if(pacResolveGhostCollision(ghost)||!g.active)break;
+  if(!g.active||!letter)return drawPacman();
+  if(g.tutorial){g.letters=[];g.tutorialStep=5;showPacmanTutorialStep();drawPacman();return}
+  g.collected++;g.letters=g.letters.filter(item=>item!==letter);renderPacmanFound();
+  if(g.collected>=g.chars.length)return finishPacmanRaid();
+  if(!g.letters.length)pacPlaceBatch();
+  $('#pacmanProgress').textContent=`${g.collected} / ${g.chars.length}`;
+};
+const pacTickV146=pacTick;
+pacTick=function(){
+  const g=pacGame;if(!g?.active)return;
+  if(!g.tutorial&&Date.now()<(g.ghostMoveAt||0)){drawPacman();return}
+  pacTickV146();
+};
+const drawPacmanV146=drawPacman;
+drawPacman=function(){
+  if(pacGame){pacGame.safeUntil=0;pacGame.poweredUntil=0}
+  drawPacmanV146();
+  const g=pacGame,canvas=$('#pacmanCanvas');if(!g||!canvas)return;
+  const ctx=canvas.getContext('2d'),cw=canvas.width/g.grid[0].length,ch=canvas.height/g.grid.length;
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`bold ${Math.floor(ch*.62)}px sans-serif`;
+  g.letters.forEach(item=>{ctx.globalAlpha=1;ctx.fillStyle='#fff36a';ctx.shadowBlur=0;ctx.fillText(item.char,(item.x+.5)*cw,(item.y+.5)*ch)});
+};
+</script>
+<style>
+.pacman-stage{grid-template-rows:auto auto minmax(0,1fr) auto}.pacman-found{display:flex;gap:3px;align-items:center;min-height:30px;padding:4px 10px;overflow-x:auto;background:#080818;border-bottom:1px solid #2020a5}.pacman-found span{flex:0 0 auto;color:#555;border:1px solid #292947;border-radius:4px;padding:2px 4px}.pacman-found span.found{color:#fff36a;border-color:#ffe34d;background:#393300;box-shadow:0 0 7px #ffe34d66}.pacman-controls{display:flex!important;justify-content:space-between!important;padding:8px 18px!important}.pacman-joystick{display:none!important}.pacman-key-group{display:flex;gap:7px}.pacman-key-vertical{flex-direction:column}.pacman-key-horizontal{align-items:center}.pacman-key-group button{width:50px;height:46px;border:1px solid #5555cc;border-radius:8px;background:#171735;color:#ffe34d;font-size:23px;font-weight:800;touch-action:none;user-select:none}.pacman-key-group button:active{background:#34347c;transform:scale(.96)}
+</style>
+<script>
+/* v147: sentence-balanced politics sessions, scoped codex and reliable crystal review. */
+function politicsPrompt(item){const raw=String(item.topic||item.question||'知识点').replace(/[？?。；;：:]+$/g,'').trim();return `${raw||'这一知识点'}？`}
+function politicsSentenceParts(text){const source=String(text||'').replace(/\s+/g,'').trim();if(!source)return[];return(source.match(/(?:[①②③④⑤⑥⑦⑧⑨⑩]|\d+[.、])?[^。！？；]+[。！？；]?/g)||[source]).map(value=>value.trim()).filter(Boolean)}
+function politicsFillSentenceCount(item){return Math.max(1,politicsSentenceParts(item.full).length)}
+function choosePoliticsSession(lesson){
+  const all=lesson.questions.map((item,index)=>({item,index,boss:isPoliticsBoss(item),sentences:politicsFillSentenceCount(item)})),remaining=all.filter(entry=>!state.politicsQuestionClears[politicsQuestionKey(entry.item)]),pool=shuffle(remaining.length?remaining:all),selected=[];let total=0,bossUsed=false;
+  for(const entry of pool){if(entry.boss&&bossUsed||selected.length&&total+entry.sentences>7)continue;selected.push(entry);total+=entry.sentences;bossUsed||=entry.boss;if(total>=5)break}
+  if(total<5)for(const entry of shuffle(all.filter(candidate=>!selected.some(chosen=>chosen.index===candidate.index)))){if(entry.boss&&bossUsed||total+entry.sentences>7)continue;selected.push(entry);total+=entry.sentences;bossUsed||=entry.boss;if(total>=5)break}
+  if(!selected.length&&all.length)selected.push(all[0]);selected.sort((a,b)=>Number(a.boss)-Number(b.boss));return selected
+}
+function balancedPoliticsMask(text,ratio){return politicsSentenceParts(text).map(sentence=>{const colon=Math.max(sentence.indexOf('：'),sentence.indexOf(':')),prefix=colon>=0?sentence.slice(0,colon+1):'',body=colon>=0?sentence.slice(colon+1):sentence,indexes=[...body].map((char,index)=>/[\u4e00-\u9fff]/.test(char)?index:-1).filter(index=>index>=0),target=Math.max(1,Math.round(indexes.length*ratio)),hidden=new Set();if(indexes.length){const step=indexes.length/target;for(let i=0;i<target;i++)hidden.add(indexes[Math.min(indexes.length-1,Math.floor((i+.5)*step))])}return prefix+[...body].map((char,index)=>hidden.has(index)?'＿':char).join('')}).join('\n')}
+function politicsDisplayText(text){return escapeHtml(String(text||'')).replace(/\n/g,'<br>')}
+let politicsPreparedSelection=null;
+startBattle=function(i){nav.lesson=i;const lesson=currentLesson();politicsPreparedSelection=choosePoliticsSession(lesson);$('#prepTitle').textContent=lesson.title+' · 战斗准备';const unlocked=state.level>=2,lens=state.level>=4;$('#codexLock').textContent=(unlocked?'魔典仅展示本场随机题目的答案':'魔典将在 2 级解锁')+(lens?' · 透镜已装备（本场 2 次）':' · 透镜将在 4 级解锁');$('#codexBody').innerHTML=unlocked?politicsPreparedSelection.map((entry,index)=>`<div class="codex-entry"><b>${index+1}. ${escapeHtml(politicsPrompt(entry.item))}</b><div>${politicsDisplayText(entry.item.full)}</div></div>`).join(''):'';$('#prepModal').classList.add('open')};
+beginBattle=function(){const lesson=currentLesson(),selected=politicsPreparedSelection?.length?politicsPreparedSelection:choosePoliticsSession(lesson);politicsPendingOrder=selected.map(entry=>entry.index);politicsPendingOrder.forEach(index=>preparePoliticalBlank(lesson.questions[index]));beginBattleV119();battle.order=[...politicsPendingOrder];battle.fixedOrder=[...politicsPendingOrder];battle.fixedQuestionCount=battle.order.length;battle.selectedQuestionIds=battle.order.map(index=>politicsQuestionKey(lesson.questions[index]));politicsPendingOrder=null;politicsPreparedSelection=null;$('#flameMonster')?.classList.remove('defeated')};
+renderBattle=function(){installFlameMonster();updateFlameMonsterStage(battle.round,battle.round!==flameMonsterRound);const item=q(),total=battle.order.length,dot=$$('.round-dot'),panel=$('#battlePanel'),shields=shieldHudHtml();dot.forEach((node,index)=>node.classList.toggle('on',index<battle.round));$('#battleTitle').textContent=`${currentLesson().title} · 第 ${battle.round} 阶段`;const ratio=battle.round===1?.35:battle.round===2?.65:1,prompt=politicsPrompt(item),shown=ratio<1?`<div class="question politics-balanced">${politicsDisplayText(balancedPoliticsMask(item.full,ratio))}</div>`:'';panel.innerHTML=`${shields}<div class="round-label">阶段${['一','二','三'][battle.round-1]} · ${battle.round===3?'整段默写':'均匀填空'} ${battle.qIndex+1}/${total}</div><div class="memory-question">${escapeHtml(prompt)}</div>${shown}<textarea class="answer-input" id="fullInput" placeholder="默出整段"></textarea><div class="action-row"><span class="hint">分类词、冒号及其前面的内容需要保留</span><button class="primary" id="submitFull">确认</button></div>`;$('#submitFull').onclick=()=>checkFull(item)};
+allReviewItems=function(){const items=[];Object.entries(bookContent).forEach(([bookIndex,content])=>content.units.forEach((unit,unitIndex)=>unit.lessons.forEach((lesson,lessonIndex)=>lesson.questions.forEach((question,questionIndex)=>{if(question.sharedPdf||lesson.sharedBlanks){const answer=String(question.full||question.answer||'').trim();if(answer)items.push({id:`${bookIndex}-${unitIndex}-${lessonIndex}-${questionIndex}`,q:politicsPrompt(question),a:answer});return}(question.subs||[]).forEach((sub,subIndex)=>{if(String(sub.a||'').trim())items.push({id:`${bookIndex}-${unitIndex}-${lessonIndex}-${questionIndex}-${subIndex}`,q:sub.q,a:sub.a})})}))));return items};
+const politicsOpenReviewV147=politicsOpenReview;
+openReview=function(){if(state.subjectMode==='chinese')return politicsOpenReviewV147();const forced=state.hp<=0,items=allReviewItems().filter(item=>item.q&&item.a).sort((a,b)=>(state.reviews[a.id]||0)-(state.reviews[b.id]||0)),r=items[0];if(!r)return toast('水晶球暂时没有可复习的题目');$('#closeReview').hidden=forced;$('#reviewModal .sub').textContent=forced?'生命值已清零，完成复习后才能继续':'最久未复习的知识正在显现';$('#reviewBody').innerHTML=`<div class="review-q"><b>${escapeHtml(r.q)}</b><br><span class="blank">请填写完整考点</span></div><textarea class="answer-input" id="reviewInput" placeholder="写下答案"></textarea><div id="reviewFeedback"></div><div class="action-row"><span class="hint">必须完成题目后才会恢复生命</span><button class="primary" id="submitReview">确认</button></div>`;$('#submitReview').onclick=()=>{const input=$('#reviewInput').value.trim();if(!input)return toast('请先填写答案');const result=reviewGrade(input,r.a);if(result.pass){state.hp=Math.min(typeof getMaxHp==='function'?getMaxHp():100,state.hp+30);state.reviews[r.id]=Date.now();save();updateStats();$('#reviewModal').classList.remove('open');$('#closeReview').hidden=false;toast('复习通过，生命 +30')}else{$('#reviewFeedback').innerHTML=`<div class="review-correction"><b>错误内容已标红</b><br>${reviewDiff(input,r.a)}<br><b>正确答案：</b>${escapeHtml(r.a)}</div>`;toast('答案不正确，请修改后再次确认')}};$('#reviewModal').classList.add('open')};
+$('#crystalBtn').onclick=()=>openReview();
+failPacmanRaid=function(){if(!pacGame?.active)return;stopPacman();requestAnimationFrame(()=>showRaidResult(false,'游戏结束','被幽灵抓住了','本次吃豆人记忆挑战失败。'))};
+</script>
+<style>.politics-balanced{white-space:pre-line;line-height:1.9}.codex-entry div{margin-top:6px;white-space:pre-line;line-height:1.7}</style>
+<script>
+const politicsReviewHandlerV147=openReview;
+openReview=function(){
+  if(state.subjectMode!=='chinese')return politicsReviewHandlerV147();
+  const forced=state.hp<=0,curse=[...state.chineseCurses].sort((a,b)=>(state.chineseReviews[a.id]||0)-(state.chineseReviews[b.id]||0))[0];
+  if(!curse)return toast('语文模式暂时没有错题');
+  $('#closeReview').hidden=forced;$('#reviewModal .sub').textContent='语文水晶球只会抽取语文错题';
+  $('#reviewBody').innerHTML=`<div class="review-q">${escapeHtml(curse.prompt)}</div><textarea class="answer-input" id="reviewInput" placeholder="写下答案"></textarea><div id="reviewFeedback"></div><button class="primary" id="submitReview">确认</button>`;
+  $('#submitReview').onclick=()=>{const input=$('#reviewInput').value.trim();if(!input)return toast('请先填写答案');if(cnSimilarity(input,curse.answer)>=.8){state.hp=Math.min(typeof getMaxHp==='function'?getMaxHp():100,state.hp+50);state.chineseReviews[curse.id]=Date.now();state.chineseCurses=state.chineseCurses.filter(item=>item.id!==curse.id);save();updateStats();$('#reviewModal').classList.remove('open');$('#closeReview').hidden=false;toast('复习通过，生命 +50')}else{$('#reviewFeedback').innerHTML=`<div class="review-correction">${reviewDiff(input,curse.answer)}<br><b>正确答案：</b>${escapeHtml(curse.answer)}</div>`}};
+  $('#reviewModal').classList.add('open');
+};
+$('#crystalBtn').onclick=()=>openReview();
+</script>
 </body></html>
 
 
