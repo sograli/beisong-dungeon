@@ -2031,6 +2031,41 @@ openReview=function(){
 };
 $('#crystalBtn').onclick=()=>openReview();
 </script>
+<script>
+function politicsRequiredAnswer(text){return politicsSentenceParts(text).map(sentence=>{const colon=Math.max(sentence.indexOf('：'),sentence.indexOf(':'));return colon>=0?sentence.slice(colon+1):sentence}).join('')}
+function addSpeechButton(input){
+  if(!input||input.dataset.speechReady)return;input.dataset.speechReady='1';
+  const button=document.createElement('button');button.type='button';button.className='speech-input-btn';button.textContent='语音输入';button.title='语音输入后仍可手动修改';input.insertAdjacentElement('afterend',button);
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Recognition){button.disabled=true;button.title='当前浏览器不支持语音输入';return}
+  button.onclick=()=>{const recognition=new Recognition();recognition.lang='zh-CN';recognition.interimResults=false;recognition.onstart=()=>{button.textContent='正在听…';button.classList.add('listening')};recognition.onerror=()=>{button.textContent='语音输入';button.classList.remove('listening');toast('语音输入失败，请检查麦克风权限')};recognition.onend=()=>{button.textContent='语音输入';button.classList.remove('listening')};recognition.onresult=event=>{const value=[...event.results].map(result=>result[0].transcript).join('');input.value+=(input.value?'':'')+value;input.dispatchEvent(new Event('input',{bubbles:true}))};recognition.start()}
+}
+const checkFullV148=checkFull;
+checkFull=function(item){
+  const single=$('#fullInput');
+  if(single&&!document.querySelector('[data-politics-segment]')){
+    if(battle.answerLocked)return;const expected=politicsRequiredAnswer(item.full||item.answer||''),result=smartGrade(single.value, {...item,full:expected,answer:expected,stem:expected});
+    if(result.pass){if(spendBattleHp(true)){toast('智能批改通过');nextQuestion()}else battleDefeated()}
+    else{toast(result.missing?.length?`关键表达缺失：${result.missing.slice(0,3).join('、')}`:'答案与考点差异较大');showWrongAnswer(expected)}
+    return
+  }
+  checkFullV148(item)
+};
+const renderBattleV148=renderBattle;
+renderBattle=function(){renderBattleV148();const input=$('#fullInput');if(input)addSpeechButton(input);const label=$('#battlePanel .round-label');if(label&&battle){const total=battle.fixedQuestionCount||battle.selectedQuestionIds?.length||Math.min(7,battle.order.length);label.textContent=label.textContent.replace(/\d+\/\d+/,`${Math.min(battle.qIndex+1,total)}/${total}`)}};
+const openReviewV148=openReview;
+openReview=function(){openReviewV148();const input=$('#reviewInput');if(input)addSpeechButton(input);const body=$('#reviewBody');if(body&&state.subjectMode!=='chinese'){const current=body.querySelector('.review-q');if(current&&!body.querySelector('.punctuation-hint')){const item=allReviewItems().find(entry=>current.textContent.includes(entry.q));if(item){const hint=document.createElement('div');hint.className='punctuation-hint';hint.textContent=[...item.a].map(char=>/[，。！？；：、,.!?;:]/.test(char)?char:'＿').join('');current.insertAdjacentElement('afterend',hint)}}}};
+$('#crystalBtn').onclick=()=>openReview();
+document.addEventListener('click',event=>{if(event.target.matches('#submitReview'))setTimeout(()=>addSpeechButton($('#reviewInput')),0)});
+if(!document.querySelector('#updateCheckModal'))document.body.insertAdjacentHTML('beforeend','<div class="modal" id="updateCheckModal"><div class="modal-box"><h2>检查更新</h2><p id="updateCheckText" class="sub">正在检查最新版本…</p><div class="action-row"><button class="back" id="closeUpdateCheck">稍后</button><button class="primary" id="syncUpdateBtn" hidden>同步最新版本</button></div></div></div>');
+function checkForAppUpdate(){if(!('serviceWorker'in navigator)||!location.protocol.startsWith('http'))return;const modal=$('#updateCheckModal'),text=$('#updateCheckText'),button=$('#syncUpdateBtn');navigator.serviceWorker.getRegistration('./sw.js').then(reg=>{if(!reg)return reg;return reg.update().then(()=>reg)}).then(reg=>{if(!reg)return;text.textContent=reg.waiting?'发现新版本，可以同步到最新内容':'当前已是最新版本';button.hidden=!reg.waiting;if(reg.waiting){modal.classList.add('open');button.onclick=()=>{reg.waiting.postMessage('SKIP_WAITING');reg.waiting.addEventListener('statechange',()=>location.reload())}}}).catch(()=>{});}
+$('#closeUpdateCheck').onclick=()=>$('#updateCheckModal').classList.remove('open');setTimeout(checkForAppUpdate,900);
+</script>
+<style>
+.answer-input,input,textarea{background:transparent!important;color:var(--ink)!important;border-color:#8a7435!important}.answer-input::placeholder,input::placeholder,textarea::placeholder{color:#9da49f}.speech-input-btn{margin-top:7px;border:1px solid var(--gold);border-radius:7px;background:transparent;color:var(--gold);padding:6px 11px;cursor:pointer}.speech-input-btn.listening{background:#70403b;color:#fff}.punctuation-hint{margin:8px 0;color:var(--gold);letter-spacing:2px;word-break:break-all}
+</style>
+<script>
+const speechObserver=new MutationObserver(()=>document.querySelectorAll('.answer-input').forEach(addSpeechButton));speechObserver.observe(document.body,{childList:true,subtree:true});
+</script>
 </body></html>
 
 
