@@ -1,5 +1,5 @@
-const CACHE = 'beisong-dungeon-v171';
-const ASSETS = ['./', './index.html', './chinese-content.js', './politics-pdf-content.js', './politics-pdf-fourth.js', './manifest.webmanifest', './app-icon.svg', './player-character.png', './player-walk.mp4', './player-walk-transparent.webm', './player-walk-clean.mp4', './player-walk-transparent-clean.webm'];
+const CACHE = 'beisong-dungeon-v177';
+const ASSETS = ['./', './index.html', './chinese-content.js', './politics-pdf-content.js', './politics-pdf-fourth.js', './manifest.webmanifest', './app-icon.svg', './player-character.png', './player-walk-transparent.png', './player-walk-idle.png'];
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));

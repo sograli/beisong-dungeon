@@ -2236,7 +2236,17 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 <script>
 (function patchPoliticsAndMatching(){const baseMatch=renderMatching;renderMatching=function(){const s=cnSession;if(s.matchChoicesV93){const seen=new Set();s.matchChoicesV93=s.matchChoicesV93.filter(item=>{const key=String(item.text||'').trim();if(!key||seen.has(key))return false;seen.add(key);return true})}baseMatch();};const baseBattle=renderBattle;renderBattle=function(){baseBattle();const label=$('#battlePanel .round-label');if(label&&label.textContent.includes('回合一'))$('#battlePanel .action-row .hint')?.remove()};})();
 </script>
-</body><script>setTimeout(()=>{const v=document.querySelector('.character-walk-video');if(v){v.src='./player-walk-transparent-clean.webm';v.load()}},0)</script></html>
+<style>
+.corridor .floor{background:repeating-linear-gradient(170deg,#777b7d 0 2px,#4b5053 3px 42px)!important;opacity:.78!important}
+#homeView #adventurer.character-blue .character-walk-video{display:none!important;visibility:hidden!important;opacity:0!important}
+#homeView #adventurer.character-image .character-walk-video{display:block!important;visibility:visible!important;opacity:1!important;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(180,225,255,.5)) drop-shadow(0 9px 7px #0008)!important}
+#homeView #adventurer.character-blue{filter:drop-shadow(0 0 3px rgba(132,207,255,.42)) drop-shadow(0 9px 7px #000)!important}
+</style>
+<script>
+(function isolateCharacterAnimations(){const hero=$('#homeView #adventurer'),video=hero?.querySelector('.character-walk-video');if(video){video.pause();video.remove()}if(!hero)return;const sync=()=>{const blue=hero.classList.contains('character-blue');hero.classList.toggle('character-image',!blue);hero.style.setProperty('background',blue?'none':"url('./player-walk-transparent.png') center bottom / contain no-repeat",'important')};new MutationObserver(sync).observe(hero,{attributes:true,attributeFilter:['class']});sync()})();
+</script>
+<style>#homeView #adventurer.character-image,#homeView #adventurer.character-image.walking{background:url('./player-walk-transparent.png') center bottom/contain no-repeat!important}#homeView #adventurer.character-blue{background:none!important}</style>
+</body><style>#homeView #adventurer.character-image{background:url('./player-character.png') center bottom/contain no-repeat!important}#homeView #adventurer.character-image .character-walk-video,#homeView #adventurer.character-image>div{display:none!important;visibility:hidden!important;opacity:0!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.webp')!important}#homeView #adventurer.character-image.side-right,#homeView #adventurer.character-image.walking.side-right{animation:none!important;transform:translateX(-50%) scaleX(-1)!important}#homeView #adventurer.character-image.side-left,#homeView #adventurer.character-image.walking.side-left{animation:none!important;transform:translateX(-50%) scaleX(1)!important}@media(max-width:760px){.manor-scene{grid-template-columns:repeat(2,minmax(120px,1fr))!important;grid-template-rows:repeat(4,minmax(145px,1fr))!important;gap:34px 42px!important;padding-left:34px!important;padding-right:34px!important}.manor-building{width:112px!important;min-height:104px!important}.manor-campus{grid-column:1!important;grid-row:4!important}.manor-me{grid-column:2!important;grid-row:4!important;right:auto!important}.manor-campus,.manor-me{align-self:center;justify-self:center}}</style></html>
 
 
 
@@ -2246,3 +2256,4 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 
 
 
+<style>#homeView #adventurer.character-image{width:92px!important;height:116px!important;background-image:url('./player-walk-idle.png')!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.png')!important}@media(max-width:700px){#homeView #adventurer.character-image{width:78px!important;height:99px!important}}</style>
