@@ -2296,8 +2296,8 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   function ballState(ball) {
     normalizeBall(ball);
     if (ball.reviewed >= 5) return { name: 'star', progress: 1 };
-    const duration = WAIT_HOURS[ball.reviewed] * 3600000;
-    const dueAt = ball.startedAt + duration;
+    const dueAt = ball.createdAt + WAIT_HOURS[ball.reviewed] * 3600000;
+    const duration = Math.max(1, dueAt - ball.startedAt);
     const now = Date.now();
     if (now > dueDayEnd(dueAt)) return { name: 'expired', progress: 1, dueAt };
     if (dayKey(now) === dayKey(dueAt)) return { name: 'red', progress: Math.min(1, (now - ball.startedAt) / duration), dueAt };
@@ -2374,7 +2374,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
       const status = ballState(ball);
       const bottom = status.name === 'star' ? 86 : 7 + status.progress * 76;
       const label = status.name === 'star' ? '★' : '✦';
-      return `<button class="wish-ball ${status.name}" data-wish-index="${index}" style="bottom:${bottom}%" aria-label="${ball.date} 的纸团">${label}<small>${escapeHtml(ball.date)}</small></button>`;
+      return `<button class="wish-ball ${status.name}" data-wish-index="${index}" style="bottom:${bottom}%" aria-label="${ball.date} 的纸团，共 ${ball.pages.length} 页">${label}<small>${escapeHtml(ball.date)} · ${ball.pages.length}页</small></button>`;
     }).join('');
     document.querySelectorAll('.wish-ball').forEach((ball, index) => {
       ball.style.setProperty('display', 'block', 'important');
@@ -2392,7 +2392,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
     if (!ball) return;
     const status = ballState(ball);
     if (status.name === 'star') return toast('这份记忆已经化作星星');
-    let page = 0;
+    let page = Math.max(0, ball.pages.length - 1);
     const panel = $('#starWishReview');
     panel.hidden = false;
     const canReview = status.name === 'yellow' || status.name === 'red';
@@ -2434,7 +2434,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
         closePanel();
         save();
         render();
-        toast(ball.reviewed >= 5 ? '纸团已化作星星' : `复习完成，下次上浮需要 ${WAIT_HOURS[ball.reviewed]} 小时`);
+        toast(ball.reviewed >= 5 ? '纸团已化作星星' : `复习完成，将在投入后 ${WAIT_HOURS[ball.reviewed]} 小时到达瓶口`);
       };
       $('.wish-review-close').onclick = closePanel;
     }
@@ -2471,18 +2471,24 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
     if (event.target.id === 'wishAddPage') { saveDraft(); draftPages.push({ topic: '', text: '' }); showDraftPage(draftPages.length - 1); }
     if (event.target.id === 'wishRoll') {
       saveDraft();
-      const pages = draftPages.filter(page => page.topic || page.text);
+      const pages = draftPages.filter(page => page.topic || page.text).map(page => ({ topic: String(page.topic || ''), text: String(page.text || '') }));
       if (!pages.length || pages.some(page => !page.text)) return toast('请填写每一页的学习内容');
       state.starWishBalls = state.starWishBalls || [];
       const today = dayKey(Date.now());
       state.starWishDates = Array.from(new Set([...(state.starWishDates || []), today]));
       const existing = state.starWishBalls.find(ball => normalizeBall(ball).date === today && ball.reviewed < 5);
-      if (existing) existing.pages.push(...pages);
+      if (existing) {
+        existing.pages = [...existing.pages, ...pages];
+        existing.updatedAt = Date.now();
+      }
       else state.starWishBalls.push({ date: today, createdAt: Date.now(), startedAt: Date.now(), reviewed: 0, pages });
       draftPages = [{ topic: '', text: '' }];
       draftPage = 0;
-      showDraftPage(0);
-      save(); render(); toast(existing ? '已合并进今天的纸团' : '纸团已投入星愿瓶');
+      $('#wishTopic').value = '';
+      $('#wishText').value = '';
+      $('#wishDraftCount').textContent = '第 1 / 1 页';
+      $('#wishPrev').disabled = true;
+      save(); render(); toast(existing ? `已合并进今天的纸团，现有 ${existing.pages.length} 页` : '纸团已投入星愿瓶');
     }
     if (event.target.id === 'wishMonthPrev' || event.target.id === 'wishMonthNext') {
       calendarMonth.setMonth(calendarMonth.getMonth() + (event.target.id === 'wishMonthNext' ? 1 : -1));
