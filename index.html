@@ -64,6 +64,10 @@
     .chinese-map .map-road{background:transparent!important;border-color:transparent!important}.chinese-map .parchment{contain:layout paint;transform:translateZ(0)}.chinese-map .map-hero{will-change:left,top;backface-visibility:hidden}.brush-road-layer{position:absolute;inset:0;width:100%;height:100%;z-index:1;overflow:visible;pointer-events:none;contain:strict;transform:translateZ(0)}.brush-road-shadow{fill:none;stroke:#50351f;stroke-linecap:round;stroke-linejoin:round;opacity:.34}.brush-road-ink{fill:none;stroke:#76552f;stroke-linecap:round;stroke-linejoin:round;filter:url(#brushRough)}.brush-road-dry{fill:none;stroke:#b18a53;stroke-linecap:round;stroke-dasharray:2 8 17 5;opacity:.28}@media(max-width:700px),(prefers-reduced-motion:reduce){.brush-road-ink{filter:none}.brush-road-dry{display:none}}
     body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable="true"]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}.view:not(.active){display:none!important}.chinese-work .work-levels{position:relative;z-index:20;pointer-events:auto!important}.chinese-work .work-level{position:relative;z-index:21;pointer-events:auto!important;touch-action:manipulation;-webkit-tap-highlight-color:rgba(229,189,88,.22)}
     .notebook-launch{position:absolute;right:clamp(18px,5vw,64px);top:28px;width:58px;height:66px;border:1px solid #bd9855;background:#e6d29d;color:#352817;font-size:30px;cursor:pointer;box-shadow:5px 6px 0 #493923;transform:rotate(3deg);z-index:4}.notebook-launch:after{content:'笔记本';position:absolute;left:50%;top:68px;transform:translateX(-50%);font-size:11px;color:var(--gold);white-space:nowrap}.notebook-box{width:min(720px,100%);background:#e8d9ad!important;color:#302719!important}.notebook-box input,.notebook-box textarea{width:100%;border:0;border-bottom:1px solid #9e8a5b;background:rgba(255,255,255,.32);color:#302719;padding:11px}.notebook-box textarea{min-height:45vh;line-height:2;resize:vertical;background-image:repeating-linear-gradient(transparent 0 31px,rgba(88,70,38,.2) 32px)}.notebook-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}.mystery-box{width:min(560px,100%);border-color:#8b7447!important;box-shadow:0 18px 60px #000}.mystery-speaker{display:flex;align-items:center;gap:12px;margin-bottom:16px}.mystery-avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#15110d;border:2px solid var(--gold);font-size:28px}.mystery-text{min-height:90px;line-height:1.9;font-size:17px}.page-tutorial-btn{position:absolute;right:12px;top:12px;z-index:25;width:36px;height:36px;border:1px solid var(--gold);border-radius:50%;background:#17130e;color:var(--gold);cursor:pointer}.raid-subject-label{order:-2}@media(max-width:600px){.notebook-launch{position:relative;right:auto;top:auto;margin:4px 0 16px}.notebook-box textarea{min-height:38vh}.mystery-text{font-size:15px}.notebook-toolbar{flex-wrap:wrap}}
+.starwish-view button{background:transparent !important;color:#fff}
+.starwish-view{background-image:url('./starwish-sky.jpg?v=179') !important;background-position:center;background-size:cover;background-repeat:no-repeat}
+.starwish-bottle{border:0;background-image:url('./starwish-bottle.jpg?v=179') !important;background-position:center;background-size:contain;background-repeat:no-repeat;box-shadow:none}
+.starwish-neck{display:none}
 </style>
 <style>.pacman-controls{display:grid;grid-template-columns:auto auto;gap:12px}.pacman-joystick{display:none}.pacman-dpad{display:grid;grid-template-columns:repeat(2,48px);grid-template-rows:repeat(2,48px);gap:6px}.pacman-dpad button{border:1px solid #5555cc;border-radius:8px;background:#171735;color:#ffe34d;font-size:22px;font-weight:700;user-select:none}.pacman-dpad button:active{background:#34347c;transform:scale(.96)}</style>
 </head>
@@ -2257,3 +2261,252 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 
 
 <style>#homeView #adventurer.character-image{width:92px!important;height:116px!important;background-image:url('./player-walk-idle.png')!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.png')!important}@media(max-width:700px){#homeView #adventurer.character-image{width:78px!important;height:99px!important}}</style>
+<script>
+/* 星愿瓶功能 */
+(function () {
+  const WAIT_HOURS = [24, 48, 96, 168, 360];
+  let draftPages = [{ topic: '', text: '' }];
+  let draftPage = 0;
+  let reviewTimer = null;
+  let calendarMonth = new Date();
+  calendarMonth.setDate(1);
+
+  function dayKey(value) {
+    const d = new Date(value);
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+  }
+
+  function dueDayEnd(timestamp) {
+    const d = new Date(timestamp);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  }
+
+  function normalizeBall(ball) {
+    ball.reviewed = Number(ball.reviewed || 0);
+    ball.startedAt = Number(ball.startedAt || ball.createdAt || Date.now());
+    ball.createdAt = Number(ball.createdAt || ball.startedAt);
+    ball.date = ball.date || dayKey(ball.createdAt);
+    if (!Array.isArray(ball.pages)) ball.pages = [{ topic: ball.topic || '', text: ball.text || '' }];
+    return ball;
+  }
+
+  function ballState(ball) {
+    normalizeBall(ball);
+    if (ball.reviewed >= 5) return { name: 'star', progress: 1 };
+    const duration = WAIT_HOURS[ball.reviewed] * 3600000;
+    const dueAt = ball.startedAt + duration;
+    const now = Date.now();
+    if (now > dueDayEnd(dueAt)) return { name: 'expired', progress: 1, dueAt };
+    if (dayKey(now) === dayKey(dueAt)) return { name: 'red', progress: Math.min(1, (now - ball.startedAt) / duration), dueAt };
+    const progress = Math.max(0, Math.min(1, (now - ball.startedAt) / duration));
+    return { name: progress >= 0.75 ? 'yellow' : 'white', progress, dueAt };
+  }
+
+  function ensureView() {
+    if (!$('.manor-scene') || document.querySelector('.starwish-icon')) return;
+    $('.manor-scene').insertAdjacentHTML('beforeend', '<button class="starwish-icon" data-starwish-open aria-label="打开星愿瓶">✧<small>星愿瓶</small></button>');
+    document.body.insertAdjacentHTML('beforeend', `<section class="starwish-view" id="starWishView">
+      <header class="starwish-head"><button data-starwish-close>‹ 庄园</button><h2>星愿瓶</h2><strong id="starWishCount">★ 0</strong></header>
+      <section class="wish-calendar"><header><button id="wishMonthPrev" aria-label="上个月">‹</button><strong id="wishMonthTitle"></strong><button id="wishMonthNext" aria-label="下个月">›</button></header><div class="wish-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div class="wish-calendar-grid" id="wishCalendarGrid"></div></section>
+      <section class="wish-editor">
+        <div class="wish-page-count" id="wishDraftCount">第 1 / 1 页</div>
+        <input id="wishTopic" placeholder="这一页的主题">
+        <textarea id="wishText" placeholder="写下今天学到的内容"></textarea>
+        <div class="wish-editor-actions"><button id="wishPrev">上一页</button><button id="wishNext">下一页</button><button id="wishAddPage">新一页</button><button id="wishRoll">★ 搓成纸团投入</button></div>
+      </section>
+      <div class="starwish-bottle"><img class="starwish-bottle-art" src="./starwish-bottle-glass.png?v=183" alt=""><div id="starWishBalls"></div></div>
+      <div id="starWishReview" class="starwish-review" hidden></div>
+    </section>`);
+    if (!$('#starWishCalendarStyle')) document.head.insertAdjacentHTML('beforeend', `<style id="starWishCalendarStyle">
+      .wish-calendar{width:min(560px,92vw);margin:16px auto;padding:12px;background:#071127aa;border:1px solid #d6f4ff55;border-radius:14px;backdrop-filter:blur(8px)}
+      .wish-calendar header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;text-align:center;margin-bottom:8px}.wish-calendar header strong{color:#fff;font-size:16px}
+      .wish-week,.wish-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.wish-week span{text-align:center;color:#a9bad6;font-size:12px;padding:4px}
+      .wish-calendar-day,.wish-calendar-empty{aspect-ratio:1;min-width:0}.wish-calendar-day{position:relative;padding:2px!important;border:1px solid transparent!important;color:#dbe8ff!important;background:transparent!important}.wish-calendar-day.marked{border-color:#ffe56a55!important}.wish-calendar-day b{position:absolute;right:2px;top:0;color:#ffe25f;font-size:12px;filter:drop-shadow(0 0 5px #ffd84d)}
+      .wish-calendar-day:hover,.wish-calendar-day:focus-visible{background:#ffffff18!important;border-color:#fff8!important}
+      .wish-preview-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}.wish-review-locked{color:#aebbd1;font-size:13px;padding:8px}.wish-preview-actions #wishStartReview{border-color:#ffe36c!important;color:#ffe36c!important;box-shadow:0 0 12px #ffe36c33}
+      @media(max-width:480px){.wish-calendar{padding:8px}.wish-week,.wish-calendar-grid{gap:2px}.wish-calendar-day b{font-size:10px}.wish-calendar-day span{font-size:12px}}
+    </style>`);
+    render();
+  }
+
+  function saveDraft() {
+    const topic = $('#wishTopic');
+    if (!topic) return;
+    draftPages[draftPage] = { topic: topic.value.trim(), text: $('#wishText').value.trim() };
+  }
+
+  function showDraftPage(index) {
+    saveDraft();
+    draftPage = Math.max(0, Math.min(index, draftPages.length - 1));
+    $('#wishTopic').value = draftPages[draftPage].topic;
+    $('#wishText').value = draftPages[draftPage].text;
+    $('#wishDraftCount').textContent = `第 ${draftPage + 1} / ${draftPages.length} 页`;
+    $('#wishPrev').disabled = draftPage === 0;
+  }
+
+  function renderCalendar() {
+    const grid = $('#wishCalendarGrid');
+    if (!grid) return;
+    state.starWishDates = Array.from(new Set([...(state.starWishDates || []), ...(state.starWishBalls || []).map(ball => normalizeBall(ball).date)]));
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    $('#wishMonthTitle').textContent = `${year} 年 ${month + 1} 月`;
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const days = new Date(year, month + 1, 0).getDate();
+    let html = '<span class="wish-calendar-empty"></span>'.repeat(firstWeekday);
+    for (let day = 1; day <= days; day++) {
+      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const marked = state.starWishDates.includes(date);
+      html += `<button class="wish-calendar-day${marked ? ' marked' : ''}" data-wish-date="${date}"><span>${day}</span>${marked ? '<b>★</b>' : ''}</button>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  function render() {
+    if (!$('#starWishBalls')) return;
+    state.starWishBalls = (state.starWishBalls || []).map(normalizeBall).filter(ball => ballState(ball).name !== 'expired');
+    const stars = state.starWishBalls.filter(ball => ball.reviewed >= 5).length;
+    $('#starWishCount').textContent = `★ ${stars}`;
+    $('#starWishBalls').innerHTML = state.starWishBalls.map((ball, index) => {
+      const status = ballState(ball);
+      const bottom = status.name === 'star' ? 86 : 7 + status.progress * 76;
+      const label = status.name === 'star' ? '★' : '✦';
+      return `<button class="wish-ball ${status.name}" data-wish-index="${index}" style="bottom:${bottom}%" aria-label="${ball.date} 的纸团">${label}<small>${escapeHtml(ball.date)}</small></button>`;
+    }).join('');
+    document.querySelectorAll('.wish-ball').forEach((ball, index) => {
+      ball.style.setProperty('display', 'block', 'important');
+      ball.style.setProperty('z-index', String(10 + index), 'important');
+      ball.style.setProperty('font-size', '32px', 'important');
+      ball.style.setProperty('text-shadow', '0 0 8px #fff,0 0 18px currentColor', 'important');
+      ball.style.setProperty('opacity', '1', 'important');
+    });
+    save();
+    renderCalendar();
+  }
+
+  function openReview(index) {
+    const ball = state.starWishBalls[index];
+    if (!ball) return;
+    const status = ballState(ball);
+    if (status.name === 'star') return toast('这份记忆已经化作星星');
+    let page = 0;
+    const panel = $('#starWishReview');
+    panel.hidden = false;
+    const canReview = status.name === 'yellow' || status.name === 'red';
+
+    function closePanel() {
+      clearInterval(reviewTimer);
+      panel.hidden = true;
+    }
+
+    function showPreview() {
+      clearInterval(reviewTimer);
+      const current = ball.pages[page];
+      panel.innerHTML = `<button class="wish-review-close" aria-label="关闭">×</button><div class="wish-review-page"><small>${page + 1} / ${ball.pages.length} · ${canReview ? '可复习' : '查看模式'}</small><h3>${escapeHtml(current.topic || '今日学习')}</h3><p>${escapeHtml(current.text).replace(/\n/g, '<br>')}</p><div class="wish-preview-actions"><button id="wishPreviewPrev" ${page === 0 ? 'disabled' : ''}>上一页</button><button id="wishPreviewNext" ${page === ball.pages.length - 1 ? 'disabled' : ''}>下一页</button>${canReview ? '<button id="wishStartReview">开始复习</button>' : '<span class="wish-review-locked">尚未到复习时间</span>'}</div></div>`;
+      $('.wish-review-close').onclick = closePanel;
+      $('#wishPreviewPrev').onclick = () => { page--; showPreview(); };
+      $('#wishPreviewNext').onclick = () => { page++; showPreview(); };
+      if ($('#wishStartReview')) $('#wishStartReview').onclick = () => { page = 0; showTimedPage(); };
+    }
+
+    function showTimedPage() {
+      clearInterval(reviewTimer);
+      const current = ball.pages[page];
+      const last = page === ball.pages.length - 1;
+      panel.innerHTML = `<button class="wish-review-close" aria-label="关闭">×</button><div class="wish-review-page"><small>正式复习 · ${page + 1} / ${ball.pages.length}</small><h3>${escapeHtml(current.topic || '今日学习')}</h3><p>${escapeHtml(current.text).replace(/\n/g, '<br>')}</p><button id="wishReviewNext" disabled>${last ? '完成本次复习（5）' : '下一页（5）'}</button></div>`;
+      let remain = 5;
+      const button = $('#wishReviewNext');
+      reviewTimer = setInterval(() => {
+        remain--;
+        button.textContent = remain > 0 ? `${last ? '完成本次复习' : '下一页'}（${remain}）` : (last ? '完成本次复习' : '下一页');
+        if (remain <= 0) {
+          clearInterval(reviewTimer);
+          button.disabled = false;
+        }
+      }, 1000);
+      button.onclick = () => {
+        if (!last) { page++; showTimedPage(); return; }
+        ball.reviewed++;
+        ball.startedAt = Date.now();
+        closePanel();
+        save();
+        render();
+        toast(ball.reviewed >= 5 ? '纸团已化作星星' : `复习完成，下次上浮需要 ${WAIT_HOURS[ball.reviewed]} 小时`);
+      };
+      $('.wish-review-close').onclick = closePanel;
+    }
+    showPreview();
+  }
+
+  function renderBottleArt() {
+    const art = document.querySelector('.starwish-bottle-art');
+    const view = document.querySelector('.starwish-view');
+    const bottle = document.querySelector('.starwish-bottle');
+    const balls = document.querySelector('#starWishBalls');
+    if (view) view.style.setProperty('background', "url('./starwish-sky.jpg?v=182') center / cover no-repeat fixed", 'important');
+    if (bottle) {
+      bottle.style.setProperty('background', 'none', 'important');
+      bottle.style.setProperty('border', '0', 'important');
+      bottle.style.setProperty('box-shadow', 'none', 'important');
+      bottle.style.setProperty('border-radius', '0', 'important');
+    }
+    document.querySelectorAll('.starwish-view button').forEach(button => {
+      button.style.setProperty('background', 'transparent', 'important');
+      button.style.setProperty('color', '#fff', 'important');
+    });
+    if (art) Object.assign(art.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'contain', zIndex: '0', pointerEvents: 'none', filter: 'drop-shadow(0 0 14px #c8f5ff66)' });
+    if (balls) Object.assign(balls.style, { position: 'absolute', inset: '9% 18% 7%', zIndex: '1' });
+  }
+
+  document.addEventListener('click', event => {
+    if (event.target.closest('[data-starwish-open]')) { $('#starWishView').classList.add('open'); renderBottleArt(); render(); }
+    if (event.target.closest('[data-starwish-close]')) $('#starWishView').classList.remove('open');
+    const ballButton = event.target.closest('[data-wish-index]');
+    if (ballButton) openReview(Number(ballButton.dataset.wishIndex));
+    if (event.target.id === 'wishPrev') showDraftPage(draftPage - 1);
+    if (event.target.id === 'wishNext') showDraftPage(Math.min(draftPage + 1, draftPages.length - 1));
+    if (event.target.id === 'wishAddPage') { saveDraft(); draftPages.push({ topic: '', text: '' }); showDraftPage(draftPages.length - 1); }
+    if (event.target.id === 'wishRoll') {
+      saveDraft();
+      const pages = draftPages.filter(page => page.topic || page.text);
+      if (!pages.length || pages.some(page => !page.text)) return toast('请填写每一页的学习内容');
+      state.starWishBalls = state.starWishBalls || [];
+      const today = dayKey(Date.now());
+      state.starWishDates = Array.from(new Set([...(state.starWishDates || []), today]));
+      const existing = state.starWishBalls.find(ball => normalizeBall(ball).date === today && ball.reviewed < 5);
+      if (existing) existing.pages.push(...pages);
+      else state.starWishBalls.push({ date: today, createdAt: Date.now(), startedAt: Date.now(), reviewed: 0, pages });
+      draftPages = [{ topic: '', text: '' }];
+      draftPage = 0;
+      showDraftPage(0);
+      save(); render(); toast(existing ? '已合并进今天的纸团' : '纸团已投入星愿瓶');
+    }
+    if (event.target.id === 'wishMonthPrev' || event.target.id === 'wishMonthNext') {
+      calendarMonth.setMonth(calendarMonth.getMonth() + (event.target.id === 'wishMonthNext' ? 1 : -1));
+      renderCalendar();
+    }
+    const calendarDay = event.target.closest('[data-wish-date]');
+    if (calendarDay) {
+      const date = calendarDay.dataset.wishDate;
+      const index = (state.starWishBalls || []).findIndex(ball => normalizeBall(ball).date === date);
+      if (index < 0) return toast('这一天的纸条已经完成或消失');
+      const node = document.querySelector(`[data-wish-index="${index}"]`);
+      if (node) {
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        node.animate([{ transform: 'translateX(-50%) scale(1)' }, { transform: 'translateX(-50%) scale(1.65)' }, { transform: 'translateX(-50%) scale(1)' }], { duration: 1000 });
+      }
+      openReview(index);
+    }
+  });
+
+  const originalOpenManor = openManor;
+  openManor = function () { originalOpenManor(); ensureView(); renderBottleArt(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureView);
+  else ensureView();
+})();
+</script>
+<style>
+.starwish-icon{position:absolute;right:5%;top:34%;z-index:6;border:1px solid #dffbff99;background:#dffbff14;color:#fff;font-size:30px;cursor:pointer;width:48px;height:66px;border-radius:18px 18px 13px 13px;backdrop-filter:blur(5px);filter:drop-shadow(0 0 9px #c8f4ff)}
+.starwish-icon small{display:block;font-size:10px}.starwish-view{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 20% 30%,#fff 0 1px,transparent 2px),radial-gradient(circle at 70% 65%,#a9dfff 0 1px,transparent 2px),linear-gradient(#030616,#0b1537);background-size:90px 90px,130px 130px,auto;color:#fff;display:none;padding:18px;overflow:auto}.starwish-view.open{display:block}.starwish-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}.starwish-head h2{margin:0;text-align:center}.starwish-head strong{text-align:right;font-size:20px;color:#ffe76f}.wish-search{display:flex;width:min(560px,92vw);margin:18px auto 10px;gap:8px}.wish-search input{flex:1}.wish-editor{width:min(560px,92vw);margin:auto;text-align:center}.starwish-view textarea,.starwish-view input{box-sizing:border-box;width:100%;margin:8px auto;padding:10px;background:#ffffff10;color:#fff;border:1px solid #9de8ff66;border-radius:10px}.starwish-view textarea{min-height:110px;resize:vertical}.wish-editor-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}.starwish-view button{padding:8px 12px;border-radius:10px;border:1px solid #bdeeff55;cursor:pointer}.starwish-bottle{position:relative;width:min(360px,76vw);height:55vh;margin:72px auto 25px;border:3px solid #dffbff99;border-radius:28px 28px 54px 54px;background:linear-gradient(100deg,#fff2,transparent 35%,#bdeeff13 70%,#fff2);box-shadow:inset 0 0 35px #b9efff33,0 0 20px #78cfff22}.starwish-neck{position:absolute;left:31%;top:-62px;width:38%;height:62px;border:3px solid #dffbff99;border-bottom:0;border-radius:12px 12px 0 0;background:#ffffff0d}.wish-ball{position:absolute;left:50%;transform:translateX(-50%);border:0!important;background:none!important;color:#fff;font-size:28px;filter:drop-shadow(0 0 8px currentColor);transition:bottom 1s ease}.wish-ball.yellow{color:#ffe36c}.wish-ball.red{color:#ff5757;animation:wishPulse 1.2s infinite}.wish-ball.star{color:#ffe36c;font-size:34px}.wish-ball small{display:block;font-size:9px;white-space:nowrap}.starwish-review{position:fixed;inset:8% max(4%,calc((100% - 620px)/2));z-index:3;padding:22px;background:#101831ee;border:1px solid #e6fbff99;border-radius:18px;overflow:auto;box-shadow:0 0 45px #83dfff33}.wish-review-close{float:right}.wish-review-page{clear:both;max-width:540px;margin:auto}.wish-review-page p{white-space:normal;line-height:1.8}.wish-review-page button{display:block;margin:20px auto}.wish-review-page button:disabled{opacity:.55}@keyframes wishPulse{50%{filter:drop-shadow(0 0 18px currentColor);transform:translateX(-50%) scale(1.12)}}@media(max-width:600px){.starwish-icon{right:3%;top:28%;transform:scale(.9)}.starwish-head{grid-template-columns:auto 1fr auto}.starwish-head h2{font-size:20px}.starwish-bottle{height:48vh}}
+</style>
