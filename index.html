@@ -2327,6 +2327,9 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
       .wish-calendar-day,.wish-calendar-empty{aspect-ratio:1;min-width:0}.wish-calendar-day{position:relative;padding:2px!important;border:1px solid transparent!important;color:#dbe8ff!important;background:transparent!important}.wish-calendar-day.marked{border-color:#ffe56a55!important}.wish-calendar-day b{position:absolute;right:2px;top:0;color:#ffe25f;font-size:12px;filter:drop-shadow(0 0 5px #ffd84d)}
       .wish-calendar-day:hover,.wish-calendar-day:focus-visible{background:#ffffff18!important;border-color:#fff8!important}
       .wish-preview-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}.wish-review-locked{color:#aebbd1;font-size:13px;padding:8px}.wish-preview-actions #wishStartReview{border-color:#ffe36c!important;color:#ffe36c!important;box-shadow:0 0 12px #ffe36c33}
+      .starwish-view{position:fixed!important;inset:0!important;z-index:2147483000!important;background-color:#030616!important;background-image:url('./starwish-sky.jpg?v=189')!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;isolation:isolate}
+      .starwish-view::before{content:"";position:fixed;inset:0;z-index:-1;background-color:#030616;background-image:url('./starwish-sky.jpg?v=189');background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
+      .starwish-view>*{position:relative;z-index:1}.starwish-icon{top:12%!important;z-index:20!important}
       @media(max-width:480px){.wish-calendar{padding:8px}.wish-week,.wish-calendar-grid{gap:2px}.wish-calendar-day b{font-size:10px}.wish-calendar-day span{font-size:12px}}
     </style>`);
     render();
@@ -2446,7 +2449,14 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
     const view = document.querySelector('.starwish-view');
     const bottle = document.querySelector('.starwish-bottle');
     const balls = document.querySelector('#starWishBalls');
-    if (view) view.style.setProperty('background', "url('./starwish-sky.jpg?v=182') center / cover no-repeat fixed", 'important');
+    if (view) {
+      view.style.setProperty('background-color', '#030616', 'important');
+      view.style.setProperty('background-image', "url('./starwish-sky.jpg?v=189')", 'important');
+      view.style.setProperty('background-position', 'center', 'important');
+      view.style.setProperty('background-size', 'cover', 'important');
+      view.style.setProperty('background-repeat', 'no-repeat', 'important');
+      view.style.setProperty('opacity', '1', 'important');
+    }
     if (bottle) {
       bottle.style.setProperty('background', 'none', 'important');
       bottle.style.setProperty('border', '0', 'important');
