@@ -1,4 +1,4 @@
-const CACHE = 'beisong-dungeon-v203';
+const CACHE = 'beisong-dungeon-v205';
 const ASSETS = ['./', './index.html', './chinese-content.js', './politics-pdf-content.js', './politics-pdf-fourth.js', './classical-words-data.js', './manifest.webmanifest', './app-icon.svg', './player-character.png', './player-walk-transparent.png', './player-walk-idle.png', './starwish-sky.jpg', './starwish-bottle-glass.png'];
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
