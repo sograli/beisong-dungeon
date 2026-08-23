@@ -2061,7 +2061,7 @@ startBedroomRaid=function(){if(!localStorage.getItem('beisong-practice-bedroom')
 function advanceRaidPractice(buttonId){if(!raidPractice)return;const steps=practiceSteps(),expected=steps[raidPractice.step]?.[0];if(buttonId!==expected)return;setTimeout(()=>{if(!raidPractice)return;if(raidPractice.type==='bedroom'){if(raidPractice.step===1){raidSession.writeLocked=false;applyBedroomVisibility()}if(raidPractice.step===2){$('#bedroomWarning').classList.add('hot');$('#momStateText').textContent='警告：妈妈正在靠近！'}if(raidPractice.step===3){$('#bedroomWarning').classList.remove('hot');$('#momStateText').textContent='已经安全藏好';raidSession.writeLocked=false;applyBedroomVisibility()}}else if(raidPractice.step===0){$('#classHide').disabled=false;document.querySelector('[data-desk="7"]')?.classList.add('lit','caught');$('#classroomWarning').classList.add('hot');$('#teacherStateText').textContent='老师视线即将照到你的课桌'}else if(raidPractice.step===1){$('#classroomWarning').classList.remove('hot');clearDeskSight();document.querySelector('[data-desk="7"]')?.classList.add('player-desk')}raidPractice.step++;renderRaidPractice()},0)}
 document.addEventListener('click',event=>{const button=event.target.closest('button');if(button&&raidPractice)advanceRaidPractice(button.id)});
 document.addEventListener('click',event=>{if(!raidPractice||!event.target.closest('#bedroomSubmit,#finishStudy'))return;const id=event.target.closest('button').id,expected=practiceSteps()[raidPractice.step]?.[0];if(id===expected){event.preventDefault();event.stopImmediatePropagation();advanceRaidPractice(id)}},true);
-$('#finishRaidPractice').onclick=()=>{if(!raidPractice)return;const type=raidPractice.type;localStorage.setItem(`beisong-practice-${type}`,'1');raidPractice=null;$('#raidPracticeGuide').hidden=true;$$('.raid-practice-target').forEach(element=>element.classList.remove('raid-practice-target'));stopRaid();type==='bedroom'?startBedroomActualV141():startClassroomActualV141()};
+$('#finishRaidPractice').onclick=()=>{if(!raidPractice)return;const type=raidPractice.type;localStorage.setItem(`beisong-practice-${type}`,'1');raidPractice=null;$('#raidPracticeGuide').hidden=true;$$('.raid-practice-target').forEach(element=>element.classList.remove('raid-practice-target'));stopRaid();const begin=()=>type==='bedroom'?startBedroomActualV141():startClassroomActualV141();window.playMemoryPrelude?window.playMemoryPrelude(begin):begin()};
 const stopRaidV141=stopRaid;stopRaid=function(){raidPractice=null;$('#raidPracticeGuide')&&($('#raidPracticeGuide').hidden=true);$$('.raid-practice-target').forEach(element=>element.classList.remove('raid-practice-target'));stopRaidV141()};
 renderHomestead();
 </script>
@@ -2875,7 +2875,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   const tutorialBase=openRaidTutorial;
   openRaidTutorial=function(){
     if(raidChoice!=='backpack')return tutorialBase();
-    openMysteryTutorial('raid-backpack',raidMystery.backpack,()=>startBackpackRaid());
+    openMysteryTutorial('raid-backpack',raidMystery.backpack,()=>window.playMemoryPrelude?window.playMemoryPrelude(startBackpackRaid):startBackpackRaid());
   };
 
   function buildPiles(chars){
@@ -2936,6 +2936,30 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   function close(){cancelDrag();if(game)game.active=false;game=null;$('#backpackStage').hidden=true;$('.game-nav').style.display='grid'}
   function finish(){const total=game.chars.length;close();rewardRaid(raidRewardForCount(1),'CARD通关','通关',`按顺序拖入 ${total} 个文字`)}
   $('#leaveBackpack').onclick=()=>{if(!confirm('退出后本次副本不会获得奖励，确认退出？'))return;close();openRaids()};
+})();
+</script>
+<style>
+.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff}.memory-prelude[hidden]{display:none!important}.memory-prelude video{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}.memory-prelude button{position:absolute;left:50%;bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));transform:translateX(-50%);min-width:150px;padding:11px 18px;border:1px solid #e7ca78;border-radius:8px;background:#17140dcc;color:#ffe7a3;cursor:pointer}.memory-prelude button[hidden]{display:none!important}
+</style>
+<script>
+/* v209: play the supplied intro before paragraph-based levels. */
+(() => {
+  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" playsinline preload="auto"></video><button id="memoryPreludeStart" hidden>开始播放</button></section>');
+  let active=false,nextAction=null;
+  function finish(){if(!active)return;active=false;const action=nextAction;nextAction=null;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');video.pause();video.currentTime=0;overlay.hidden=true;$('#memoryPreludeStart').hidden=true;action?.()}
+  window.playMemoryPrelude=function(action){
+    if(active)return;active=true;nextAction=action;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),start=$('#memoryPreludeStart');overlay.hidden=false;start.hidden=true;video.currentTime=0;video.muted=false;
+    const attempt=video.play();if(attempt?.catch)attempt.catch(()=>{start.hidden=false});
+  };
+  $('#memoryPreludeVideo').onended=finish;$('#memoryPreludeVideo').onerror=()=>{toast('过场视频加载失败，已直接进入关卡');finish()};$('#memoryPreludeStart').onclick=()=>{$('#memoryPreludeStart').hidden=true;$('#memoryPreludeVideo').play().catch(()=>{$('#memoryPreludeStart').hidden=false})};
+
+  const chineseStartBase=startChineseLevel;
+  startChineseLevel=function(level){if(level==='overview')return chineseStartBase(level);playMemoryPrelude(()=>chineseStartBase(level))};
+  const politicsBeginBase=beginBattle;
+  $('#confirmBattle').onclick=()=>playMemoryPrelude(politicsBeginBase);
+  const bedroomStartBase=startBedroomRaid;startBedroomRaid=function(){if(!localStorage.getItem('beisong-practice-bedroom'))return bedroomStartBase();playMemoryPrelude(bedroomStartBase)};
+  const classroomStartBase=startClassroomRaid;startClassroomRaid=function(){if(!localStorage.getItem('beisong-practice-classroom'))return classroomStartBase();playMemoryPrelude(classroomStartBase)};
+  const pacmanStartBase=startPacmanRaid;startPacmanRaid=function(skipTutorial=false){if(!skipTutorial&&!localStorage.getItem('beisong-pacman-practical-tutorial'))return pacmanStartBase(false);playMemoryPrelude(()=>pacmanStartBase(skipTutorial))};
 })();
 </script>
 <script>
