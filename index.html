@@ -2840,3 +2840,132 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 @media(max-width:390px){.catalogue-heading{display:grid;grid-template-columns:1fr auto}.catalogue-heading p{grid-column:1/-1}.catalogue-theme-copy b{font-size:17px}.catalogue-work{grid-template-columns:30px 1fr 34px;gap:8px}}
 @media(max-height:500px) and (orientation:landscape){#chineseMapView{height:calc(100dvh - 58px)!important}.chinese-catalogue{padding-top:18px}.catalogue-heading h1{font-size:28px}.catalogue-themes{grid-template-columns:repeat(2,minmax(0,1fr))}.catalogue-theme{min-height:72px}.catalogue-works{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
+<style>
+.raid-card.backpack-card{background:linear-gradient(145deg,#211b2d,#111720);border-color:#8069a2}.backpack-preview{position:relative;width:76px;height:58px}.backpack-preview i{position:absolute;display:grid;place-items:center;width:38px;height:42px;border:1px solid #e6cf9a;border-radius:7px;background:#f1e6c9;color:#31261c;font:800 22px KaiTi,STKaiti,serif;box-shadow:0 5px 0 #827052}.backpack-preview i:nth-child(1){left:3px;top:12px;transform:rotate(-9deg)}.backpack-preview i:nth-child(2){left:22px;top:7px;transform:rotate(5deg)}.backpack-preview i:nth-child(3){left:37px;top:1px;transform:rotate(10deg)}
+.backpack-stage{position:fixed;inset:0;z-index:2147482600;display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100dvh;overflow:hidden;background:radial-gradient(circle at 50% 10%,#443355,#171321 48%,#090b12);color:#f7f0df}.backpack-stage[hidden]{display:none!important}.backpack-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:max(10px,env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid #665477;background:#100d19ee}.backpack-head button{border:0;background:transparent;color:#f0d28c;cursor:pointer}.backpack-head h2{margin:0;text-align:center;font:800 clamp(19px,4vw,28px) KaiTi,STKaiti,serif}.backpack-head b{color:#f0d28c;white-space:nowrap}.backpack-collected{min-height:48px;max-height:92px;overflow:auto;padding:9px clamp(12px,4vw,42px);border-bottom:1px solid #443752;background:#0e0c16;color:#e6d9bd;line-height:1.8;word-break:break-all}.backpack-collected span{color:#847995}.backpack-board{min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));align-content:start;gap:18px 12px;padding:clamp(22px,5vw,56px);perspective:900px}.backpack-pile{position:relative;min-width:54px}.backpack-tile{position:absolute;left:50%;width:52px;height:52px;margin-left:-26px;border:1px solid #aa966c;border-radius:8px;background:linear-gradient(145deg,#fff5d8,#d8c59a);color:#2c241c;font:900 25px KaiTi,STKaiti,serif;box-shadow:0 4px 0 #746449,0 7px 10px #0007;cursor:default}.backpack-tile.top{cursor:pointer;border-color:#f2d173;box-shadow:0 4px 0 #876c31,0 0 15px #f0c75d55}.backpack-tile.top:hover,.backpack-tile.top:focus-visible{transform:translateY(-4px);filter:brightness(1.08)}.backpack-tile.wrong{animation:backpackWrong .32s}.backpack-empty{display:grid;place-items:center;color:#776c83;font-size:24px}@keyframes backpackWrong{25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px);background:#eaa6a1}}
+@media(max-width:600px){.backpack-head{grid-template-columns:auto minmax(0,1fr) auto;padding-left:8px;padding-right:8px}.backpack-head h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px}.backpack-board{grid-template-columns:repeat(5,minmax(48px,1fr));gap:14px 5px;padding:22px 8px}.backpack-tile{width:46px;height:46px;margin-left:-23px;font-size:22px}.backpack-collected{font-size:14px}}
+@media(orientation:landscape) and (max-height:540px){.backpack-collected{min-height:36px;max-height:58px;padding:5px 16px}.backpack-board{grid-template-columns:repeat(9,minmax(48px,1fr));padding:14px 18px;gap:10px}}
+.backpack-collected{min-height:58px;border:1px dashed #7e6b91;border-left:0;border-right:0;transition:.18s}.backpack-collected b{display:block;color:#f0cf7a;font-size:11px}.backpack-collected.drop-ready{border-color:#f2d173;background:#282035;box-shadow:inset 0 0 22px #e9c55b33}.backpack-tile.top{cursor:grab;touch-action:none}.backpack-tile.drag-source{opacity:.28}.backpack-drag-ghost{position:fixed!important;left:0!important;top:0!important;z-index:2147483645!important;margin:0!important;pointer-events:none!important;transform:translate(-50%,-50%) scale(1.08)!important;box-shadow:0 12px 28px #000b,0 0 20px #f0c75d77!important}
+</style>
+<script>
+/* v207: CARD layered-character drag raid. */
+(() => {
+  const grid=$('#raidsView .raid-grid');
+  if(!grid||$('#backpackStage'))return;
+  grid.insertAdjacentHTML('beforeend','<button class="raid-card backpack-card" data-raid="backpack"><div class="raid-icon backpack-preview"><i>C</i><i>A</i><i>R</i></div><h3>CARD</h3><span class="raid-difficulty">★★☆ <small>二星难度</small></span><p>选择篇目后，将无序字堆的顶层字块按原文顺序拖入收集区。上层移走后才能拖动下层。</p><span class="raid-reward">通关金币 · 记忆糖果 ×1</span></button>');
+  document.body.insertAdjacentHTML('beforeend',`<section class="backpack-stage" id="backpackStage" hidden><header class="backpack-head"><button id="leaveBackpack">退出副本</button><h2 id="backpackTitle">CARD</h2><b id="backpackProgress">0 / 0</b></header><div class="backpack-collected" id="backpackCollected"><b>将下方字块拖到这里</b><span>等待第一个字</span></div><main class="backpack-board" id="backpackBoard"></main></section>`);
+
+  let game=null;
+  const openPrepBase=openRaidPrep;
+  openRaidPrep=function(type){
+    openPrepBase(type);
+    if(type!=='backpack')return;
+    $('#raidPrepTitle').textContent='CARD';
+    setTimeout(()=>{$$('#raidParagraphs input').forEach((input,index)=>{if(index>0)input.checked=false});updateRaidSelectionHintV87()},0);
+  };
+  $$('[data-raid]').forEach(button=>button.onclick=()=>openRaidPrep(button.dataset.raid));
+
+  const startPrepBase=$('#startRaid').onclick;
+  $('#startRaid').onclick=()=>{
+    if(raidChoice==='backpack'&&selectedRaidParagraphs().length!==1)return toast('CARD每次只能选择一个段落');
+    startPrepBase();
+  };
+
+  raidMystery.backpack=['选择一篇课文中的一个段落进入字堆。','文字会无序分布在多层字堆中，只有每堆最上层可以拖动。','按原文顺序把字块拖入上方收集区；拖错不会移除。','拖完全部文字即可通关，并获得副本奖励。'];
+  const tutorialBase=openRaidTutorial;
+  openRaidTutorial=function(){
+    if(raidChoice!=='backpack')return tutorialBase();
+    openMysteryTutorial('raid-backpack',raidMystery.backpack,()=>startBackpackRaid());
+  };
+
+  function buildPiles(chars){
+    const count=Math.min(10,Math.max(5,Math.ceil(Math.sqrt(chars.length))));
+    const piles=Array.from({length:count},()=>[]);
+    chars.forEach((char,index)=>piles[Math.floor(Math.random()*count)].push({char,index}));
+    return shuffle(piles.filter(pile=>pile.length));
+  }
+  function render(){
+    if(!game)return;
+    $('#backpackProgress').textContent=`${game.index} / ${game.chars.length}`;
+    $('#backpackCollected').innerHTML=`<b>将下方字块拖到这里</b>${game.index?escapeHtml(game.chars.slice(0,game.index).join('')):'<span>等待第一个字</span>'}`;
+    $('#backpackBoard').innerHTML=game.piles.map((pile,pileIndex)=>{
+      if(!pile.length)return'<div class="backpack-empty">·</div>';
+      const visible=pile.slice(0,18),height=52+Math.max(0,visible.length-1)*7;
+      return`<div class="backpack-pile" style="height:${height}px">${[...visible].reverse().map((tile,reverseIndex)=>{const index=visible.length-1-reverseIndex,top=index===0;return`<button class="backpack-tile ${top?'top':''}" style="top:${index*7}px;z-index:${visible.length-index}" ${top?`data-backpack-pile="${pileIndex}"`:'disabled'}>${escapeHtml(tile.char)}</button>`}).join('')}</div>`;
+    }).join('');
+    $$('[data-backpack-pile]').forEach(button=>button.onpointerdown=event=>beginDrag(event,Number(button.dataset.backpackPile),button));
+  }
+  let drag=null;
+  function moveDrag(event){
+    if(!drag)return;
+    drag.ghost.style.setProperty('left',event.clientX+'px','important');drag.ghost.style.setProperty('top',event.clientY+'px','important');
+    const rect=$('#backpackCollected').getBoundingClientRect(),inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
+    $('#backpackCollected').classList.toggle('drop-ready',inside);drag.inside=inside;
+  }
+  function endDrag(event){
+    if(!drag)return;
+    moveDrag(event);const current=drag;drag=null;
+    current.ghost.remove();current.button.classList.remove('drag-source');$('#backpackCollected').classList.remove('drop-ready');
+    removeEventListener('pointermove',moveDrag);removeEventListener('pointerup',endDrag);removeEventListener('pointercancel',cancelDrag);
+    if(current.inside)choose(current.pileIndex,current.button);else toast('请把字块拖到上方收集区');
+  }
+  function cancelDrag(){
+    if(!drag)return;drag.ghost.remove();drag.button.classList.remove('drag-source');drag=null;$('#backpackCollected').classList.remove('drop-ready');
+    removeEventListener('pointermove',moveDrag);removeEventListener('pointerup',endDrag);removeEventListener('pointercancel',cancelDrag);
+  }
+  function beginDrag(event,pileIndex,button){
+    if(!game?.active||drag)return;event.preventDefault();
+    const ghost=button.cloneNode(true);ghost.removeAttribute('data-backpack-pile');ghost.classList.add('backpack-drag-ghost');document.body.append(ghost);button.classList.add('drag-source');
+    drag={pileIndex,button,ghost,inside:false};addEventListener('pointermove',moveDrag,{passive:false});addEventListener('pointerup',endDrag,{once:true});addEventListener('pointercancel',cancelDrag,{once:true});moveDrag(event);
+  }
+  function choose(pileIndex,button){
+    if(!game?.active)return;
+    const tile=game.piles[pileIndex][0],expected=game.chars[game.index];
+    if(!tile||tile.index!==game.index){button.classList.remove('wrong');void button.offsetWidth;button.classList.add('wrong');toast(tile?.char===expected?'请选择另一个位于顶层的相同文字':'这个字不是原文中的下一个字');return}
+    game.piles[pileIndex].shift();game.index++;raidTone(520,.06,.025);
+    if(game.index>=game.chars.length)return finish();
+    render();
+  }
+  function startBackpackRaid(){
+    const chars=pacTextChars(raidTarget.text);
+    if(!chars.length)return toast('所选内容没有可用文字');
+    markRaidEntry('backpack');game={active:true,chars,index:0,piles:buildPiles(chars)};
+    $('#backpackTitle').textContent=`CARD · ${raidTarget.title}`;
+    $('#backpackStage').hidden=false;$('.game-nav').style.display='none';render();
+  }
+  function close(){cancelDrag();if(game)game.active=false;game=null;$('#backpackStage').hidden=true;$('.game-nav').style.display='grid'}
+  function finish(){const total=game.chars.length;close();rewardRaid(raidRewardForCount(1),'CARD通关','通关',`按顺序拖入 ${total} 个文字`)}
+  $('#leaveBackpack').onclick=()=>{if(!confirm('退出后本次副本不会获得奖励，确认退出？'))return;close();openRaids()};
+})();
+</script>
+<script>
+/* v208: all-time raid-clear leaderboard. */
+(() => {
+  state.raidClearCount=Math.max(0,Number(state.raidClearCount)||0);
+  const resultBase=showRaidResult;
+  showRaidResult=function(won,title,score,body){
+    if(won){state.raidClearCount++;save()}
+    return resultBase(won,title,score,body);
+  };
+  const tabs=$('#leaderboardView .board-tabs');
+  if(tabs&&!tabs.querySelector('[data-board="raids"]'))tabs.insertAdjacentHTML('beforeend','<button data-board="raids">副本榜</button>');
+  boardMeta.raids=['副本通关榜','按玩家累计成功通关副本的次数排序'];
+  const leaderboardBase=openLeaderboard;
+  openLeaderboard=async function(board=activeBoard){
+    if(board!=='raids')return leaderboardBase(board);
+    activeBoard='raids';show('#leaderboardView');setActiveTab('leaderboard');
+    $$('[data-board]').forEach(button=>button.classList.toggle('on',button.dataset.board===board));
+    $('#boardSub').textContent=boardMeta.raids[1];
+    if(!authUser){$('#rankList').innerHTML='<div class="board-lock">登录账号后可以查看排行榜</div>';return}
+    $('#rankList').innerHTML='<div class="board-lock">正在读取副本榜…</div>';
+    try{
+      await saveCloudProgress();
+      const{data,error}=await supabaseClient.rpc('get_raid_clear_leaderboard');
+      if(error)throw error;
+      $('#rankList').innerHTML=(data||[]).map(row=>`<div class="rank-row ${row.is_self?'own-rank':''}"><b>${row.rank_position}</b>${profileHtml(row.player_id,row.display_titles)}<b>${Number(row.metric)||0} 次</b></div>`).join('')||'<div class="board-lock">暂时还没有副本通关记录</div>';
+    }catch(error){$('#rankList').innerHTML='<div class="board-lock">请先在 Supabase 执行副本排行榜 SQL</div>'}
+  };
+  $$('[data-board]').forEach(button=>button.onclick=()=>openLeaderboard(button.dataset.board));
+  if(typeof mysteryTutorials!=='undefined'&&mysteryTutorials.leaderboard)mysteryTutorials.leaderboard[0]='排行榜记录等级、净化、树高、副本通关和周期充能。';
+})();
+</script>
