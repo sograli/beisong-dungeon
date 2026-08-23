@@ -2395,7 +2395,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 
 
 
-<style>#homeView #adventurer.character-image{width:92px!important;height:116px!important;background-image:url('./player-walk-idle.png')!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.png')!important}@media(max-width:700px){#homeView #adventurer.character-image{width:78px!important;height:99px!important}}</style>
+<style>#homeView #adventurer.character-image{width:92px!important;height:116px!important;background-image:url('./player-walk-idle.png')!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.webp')!important}@media(max-width:700px){#homeView #adventurer.character-image{width:78px!important;height:99px!important}}</style>
 <script>
 /* 星愿瓶功能 */
 (function () {
@@ -2939,22 +2939,22 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 })();
 </script>
 <style>
-.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff}.memory-prelude[hidden]{display:none!important}.memory-prelude video{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}
+.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff;opacity:0;transition:opacity .36s ease;will-change:opacity}.memory-prelude.visible{opacity:1}.memory-prelude[hidden]{display:none!important}.memory-prelude video{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}
 </style>
 <script>
 /* v209: play the supplied intro before paragraph-based levels. */
 (() => {
   document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" muted autoplay playsinline webkit-playsinline preload="auto"></video></section>');
-  let active=false,nextAction=null,playRetry=0,playWatchdog=0,preludeObjectUrl='';
+  let active=false,finishing=false,nextAction=null,playRetry=0,playWatchdog=0,preludeObjectUrl='';
   const preludeAsset=fetch('./memory-stage-intro.mp4',{cache:'force-cache'}).then(response=>{if(!response.ok)throw new Error('video fetch failed');return response.blob()}).then(blob=>{preludeObjectUrl=URL.createObjectURL(blob);return preludeObjectUrl}).catch(()=>null);
-  function finish(){if(!active)return;active=false;clearTimeout(playWatchdog);const action=nextAction;nextAction=null;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');video.pause();video.currentTime=0;overlay.hidden=true;action?.()}
+  function finish(){if(!active||finishing)return;finishing=true;clearTimeout(playWatchdog);const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.classList.remove('visible');setTimeout(()=>{const action=nextAction;nextAction=null;video.pause();video.currentTime=0;overlay.hidden=true;active=false;finishing=false;action?.()},380)}
   function startVideo(video){
     video.defaultMuted=true;video.muted=true;video.setAttribute('muted','');
     const attempt=video.play();
     if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2){video.load()}else if(++playRetry<3){setTimeout(()=>startVideo(video),120)}else{finish()}});
   }
   window.playMemoryPrelude=async function(action){
-    if(active)return;active=true;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.hidden=false;
+    if(active)return;active=true;finishing=false;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.hidden=false;requestAnimationFrame(()=>overlay.classList.add('visible'));
     const objectUrl=preludeObjectUrl||await preludeAsset;
     if(!active)return;
     if(objectUrl&&video.src!==objectUrl){video.src=objectUrl;video.load()}
