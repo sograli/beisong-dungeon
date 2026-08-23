@@ -2945,23 +2945,29 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 /* v209: play the supplied intro before paragraph-based levels. */
 (() => {
   document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" muted autoplay playsinline webkit-playsinline preload="auto"></video></section>');
-  let active=false,nextAction=null;
-  function finish(){if(!active)return;active=false;const action=nextAction;nextAction=null;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');video.pause();video.currentTime=0;overlay.hidden=true;action?.()}
+  let active=false,nextAction=null,playRetry=0,playWatchdog=0,preludeObjectUrl='';
+  const preludeAsset=fetch('./memory-stage-intro.mp4',{cache:'force-cache'}).then(response=>{if(!response.ok)throw new Error('video fetch failed');return response.blob()}).then(blob=>{preludeObjectUrl=URL.createObjectURL(blob);return preludeObjectUrl}).catch(()=>null);
+  function finish(){if(!active)return;active=false;clearTimeout(playWatchdog);const action=nextAction;nextAction=null;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');video.pause();video.currentTime=0;overlay.hidden=true;action?.()}
   function startVideo(video){
     video.defaultMuted=true;video.muted=true;video.setAttribute('muted','');
     const attempt=video.play();
-    if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2){video.load()}else{finish()}});
+    if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2){video.load()}else if(++playRetry<3){setTimeout(()=>startVideo(video),120)}else{finish()}});
   }
-  window.playMemoryPrelude=function(action){
-    if(active)return;active=true;nextAction=action;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.hidden=false;video.currentTime=0;video.defaultMuted=true;video.muted=true;
-    startVideo(video);
+  window.playMemoryPrelude=async function(action){
+    if(active)return;active=true;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.hidden=false;
+    const objectUrl=preludeObjectUrl||await preludeAsset;
+    if(!active)return;
+    if(objectUrl&&video.src!==objectUrl){video.src=objectUrl;video.load()}
+    video.currentTime=0;video.defaultMuted=true;video.muted=true;startVideo(video);
+    playWatchdog=setTimeout(finish,12000);
   };
   const preludeVideo=$('#memoryPreludeVideo');
   preludeVideo.oncanplay=()=>{if(active&&preludeVideo.paused)startVideo(preludeVideo)};
-  preludeVideo.onended=finish;preludeVideo.onerror=()=>{toast('过场视频加载失败，已直接进入关卡');finish()};
+  preludeVideo.onended=()=>{if(preludeVideo.duration&&preludeVideo.currentTime+.25<preludeVideo.duration&&playRetry++<2){startVideo(preludeVideo);return}finish()};
+  preludeVideo.onerror=()=>{if(active&&playRetry++<2){setTimeout(()=>{preludeVideo.src='./memory-stage-intro.mp4';preludeVideo.load();startVideo(preludeVideo)},150);return}toast('过场视频加载失败，已直接进入关卡');finish()};
 
   const chineseStartBase=startChineseLevel;
-  startChineseLevel=function(level){if(level==='overview')return chineseStartBase(level);playMemoryPrelude(()=>chineseStartBase(level))};
+  startChineseLevel=function(level){playMemoryPrelude(()=>chineseStartBase(level))};
   const politicsBeginBase=beginBattle;
   $('#confirmBattle').onclick=()=>playMemoryPrelude(politicsBeginBase);
   const bedroomStartBase=startBedroomRaid;startBedroomRaid=function(){if(!localStorage.getItem('beisong-practice-bedroom'))return bedroomStartBase();playMemoryPrelude(bedroomStartBase)};
