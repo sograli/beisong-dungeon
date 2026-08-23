@@ -2939,19 +2939,26 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 })();
 </script>
 <style>
-.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff}.memory-prelude[hidden]{display:none!important}.memory-prelude video{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}.memory-prelude button{position:absolute;left:50%;bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));transform:translateX(-50%);min-width:150px;padding:11px 18px;border:1px solid #e7ca78;border-radius:8px;background:#17140dcc;color:#ffe7a3;cursor:pointer}.memory-prelude button[hidden]{display:none!important}
+.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff}.memory-prelude[hidden]{display:none!important}.memory-prelude video{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}
 </style>
 <script>
 /* v209: play the supplied intro before paragraph-based levels. */
 (() => {
-  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" playsinline preload="auto"></video><button id="memoryPreludeStart" hidden>开始播放</button></section>');
+  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" muted autoplay playsinline webkit-playsinline preload="auto"></video></section>');
   let active=false,nextAction=null;
-  function finish(){if(!active)return;active=false;const action=nextAction;nextAction=null;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');video.pause();video.currentTime=0;overlay.hidden=true;$('#memoryPreludeStart').hidden=true;action?.()}
+  function finish(){if(!active)return;active=false;const action=nextAction;nextAction=null;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');video.pause();video.currentTime=0;overlay.hidden=true;action?.()}
+  function startVideo(video){
+    video.defaultMuted=true;video.muted=true;video.setAttribute('muted','');
+    const attempt=video.play();
+    if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2){video.load()}else{finish()}});
+  }
   window.playMemoryPrelude=function(action){
-    if(active)return;active=true;nextAction=action;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),start=$('#memoryPreludeStart');overlay.hidden=false;start.hidden=true;video.currentTime=0;video.muted=false;
-    const attempt=video.play();if(attempt?.catch)attempt.catch(()=>{start.hidden=false});
+    if(active)return;active=true;nextAction=action;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.hidden=false;video.currentTime=0;video.defaultMuted=true;video.muted=true;
+    startVideo(video);
   };
-  $('#memoryPreludeVideo').onended=finish;$('#memoryPreludeVideo').onerror=()=>{toast('过场视频加载失败，已直接进入关卡');finish()};$('#memoryPreludeStart').onclick=()=>{$('#memoryPreludeStart').hidden=true;$('#memoryPreludeVideo').play().catch(()=>{$('#memoryPreludeStart').hidden=false})};
+  const preludeVideo=$('#memoryPreludeVideo');
+  preludeVideo.oncanplay=()=>{if(active&&preludeVideo.paused)startVideo(preludeVideo)};
+  preludeVideo.onended=finish;preludeVideo.onerror=()=>{toast('过场视频加载失败，已直接进入关卡');finish()};
 
   const chineseStartBase=startChineseLevel;
   startChineseLevel=function(level){if(level==='overview')return chineseStartBase(level);playMemoryPrelude(()=>chineseStartBase(level))};

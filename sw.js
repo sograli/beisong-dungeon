@@ -1,10 +1,16 @@
-const CACHE = 'beisong-dungeon-v211';
+const CACHE = 'beisong-dungeon-v213';
 const ASSETS = ['./', './index.html', './chinese-content.js', './politics-pdf-content.js', './politics-pdf-fourth.js', './classical-words-data.js', './manifest.webmanifest', './app-icon.svg', './player-character.png', './player-walk-transparent.png', './player-walk-idle.png', './starwish-sky.jpg', './starwish-bottle-glass.png', './memory-stage-intro.mp4'];
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));
-self.addEventListener('fetch', event => event.respondWith(fetch(event.request).then(response => {
+self.addEventListener('fetch', event => {
+  if (event.request.destination === 'video' || event.request.headers.has('range')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  event.respondWith(fetch(event.request).then(response => {
   const copy = response.clone();
   caches.open(CACHE).then(cache => cache.put(event.request, copy));
   return response;
-}).catch(() => caches.match(event.request))));
+}).catch(() => caches.match(event.request)));
+});
