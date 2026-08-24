@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <section class="view home active" id="homeView"><div><div class="eyebrow">背诵地牢 · 无尽回廊</div><h1>沿长廊前行，寻找知识之门</h1><div class="sub">七扇门分列两侧 · 水晶球在走廊尽头</div></div><div class="dungeon corridor"><canvas class="dungeon-3d" id="dungeon3d"></canvas><div class="floor"></div><button class="door d1" data-book="0"><span>政治必修一</span><b></b></button><button class="door d2" data-book="1"><span>政治必修二</span><b></b></button><button class="door d3" data-book="2"><span>政治必修三</span><b></b></button><button class="door d4" data-book="3"><span>政治必修四</span><b></b></button><button class="door d5" data-book="4"><span>政治选必一</span><b></b></button><button class="door d6" data-book="5"><span>政治选修二</span><b></b></button><button class="door d7" data-book="6"><span>政治选修三</span><b></b></button><div class="crystal-orb" id="corridorCrystal" title="水晶球复习"></div><div class="adventurer front-facing" id="adventurer"><div class="adventurer-hood"></div><div class="adventurer-head"></div><div class="adventurer-arm arm-left"></div><div class="adventurer-arm arm-right"></div><div class="adventurer-leg leg-left"></div><div class="adventurer-leg leg-right"></div><div class="adventurer-body"></div><div class="adventurer-staff"></div></div><div class="joystick" id="joystick"><div class="stick" id="stick"></div></div><div class="control-hint">方向键 / WASD 移动</div><div class="door-label" id="doorLabel"></div></div></section>
   <section class="view homestead" id="homesteadView"><div class="homestead-head"><div><div class="eyebrow">魔法师家园</div><h2 id="treeTitle">混沌古树</h2><div class="sub" id="treeSub">用充能转化的魔法净化污染</div></div></div><div class="homestead-grid"><div class="tree-scene" id="treeScene"><div class="clouds"></div><div class="pollution"><div class="pollution-row"><span id="treeMetricLabel">污染值</span><b id="treeMetric">100%</b></div><div class="pollution-bar"><i id="pollutionBar"></i></div></div><div class="tree"><div class="trunk"></div><div class="crown"></div></div><div class="tree-actions"><span class="pill">可施法 <b id="spellText">0</b></span><button class="primary" id="castBtn">施放净化魔法</button></div></div><div class="side-stack"><div class="tool-panel"><h3>实时属性</h3><div class="attributes" id="attributeGrid"></div></div><div class="tool-panel"><h3>魔法商店</h3><div class="shop-item"><div><b>中级魔杖</b><p>每次充能获得 1 次施法</p></div><button class="small-btn" data-buy="medium">100 金币</button></div><div class="shop-item"><div><b>高级法杖</b><p>取代低级武器，每次充能获得 1 次施法</p></div><button class="small-btn" data-buy="advanced">300 金币</button></div></div></div></div></section>
   <section class="view path-view" id="pathView"><div class="crumb"><button class="back" id="backBtn">← 返回</button><span id="crumbText"></span></div><div class="path-head"><div class="eyebrow" id="pathEyebrow"></div><h2 id="pathTitle"></h2><div class="sub" id="pathSub"></div></div><div class="path-grid" id="pathGrid"></div></section>
-  <section class="view battle" id="battleView"><div class="battle-head"><button class="back" id="leaveBattle">← 离开战斗</button><span id="battleTitle"></span><div class="rounds"><i class="round-dot"></i><i class="round-dot"></i><i class="round-dot"></i></div></div><div class="arena"><div class="fighter player"><div class="sprite">🧙</div><div class="name">记忆术士</div></div><div class="battle-panel" id="battlePanel"></div><div class="fighter monster"><div class="sprite" id="monsterSprite">👹</div><div class="name" id="monsterName">概念噬兽</div></div></div></section>
+  <section class="view battle" id="battleView"><div class="battle-head"><button class="back" id="leaveBattle">← 离开战斗</button><span id="battleTitle"></span><div class="rounds"><i class="round-dot"></i><i class="round-dot"></i><i class="round-dot"></i></div></div><div class="arena"><div class="fighter player"><div class="sprite">🧙</div><div class="name">记忆术士</div></div><div class="battle-panel" id="battlePanel"></div><div class="fighter monster"><div class="sprite" id="monsterSprite">👹</div></div></div></section>
   <section class="view raids" id="raidsView"><div class="raid-head"><div class="eyebrow">限时记忆副本</div><h2>选择副本</h2><div class="sub">先选择课文，再在五分钟内完成挑战</div></div><div class="raid-grid"><button class="raid-card" data-raid="bedroom"><div class="raid-icon">🔦</div><h3>别被发现！</h3><p>躲在被窝里看书与默写。听脚步、看警告，在开门或偷看前藏好学习痕迹。</p><span class="raid-reward">1 段 25 · 2 段 40 · 3 段 50 金币</span></button><button class="raid-card" data-raid="classroom"><div class="raid-icon">🏫</div><h3>早自习</h3><p>观察老师巡视路线，抓紧时间看书。可提前开始默写，提交内容必须完整正确。</p><span class="raid-reward">1 段 25 · 2 段 40 · 3 段 50 金币</span></button></div></section>
   <section class="view raid-stage" id="bedroomRaid"><div class="raid-toolbar"><button class="back" data-leave-raid>← 退出副本</button><b>别被发现！</b><span class="raid-timer" id="bedroomTimer">05:00</span><span class="raid-warning" id="bedroomWarning">!</span></div><div class="bedroom studying" id="bedroomScene"><div class="bedroom-door" id="bedroomDoor"><span class="mom-door-countdown" id="momDoorCountdown"></span></div><div class="mom-state"><div class="mom-figure">👩</div><span id="momStateText">门外很安静</span></div><div class="blanket"></div><div class="flashlight"></div><article class="study-surface" id="bedroomReading"></article><div class="study-surface hidden" id="bedroomWriting"><textarea id="bedroomText" placeholder="写下刚才看到的完整内容"></textarea></div><div class="bedroom-controls"><button class="mode-btn on" id="bedroomLook">看书</button><button class="mode-btn" id="bedroomWrite" disabled>写字</button><button class="primary" id="bedroomHide">藏好</button><button class="primary" id="bedroomSubmit">写完了</button></div></div></section>
   <section class="view raid-stage" id="classroomRaid"><div class="raid-toolbar"><button class="back" data-leave-raid>← 退出副本</button><b id="teacherStateText">老师正在巡视</b><span class="raid-timer" id="classroomTimer">05:00</span><span class="raid-warning" id="classroomWarning">!</span></div><div class="classroom" id="classroomScene"><div class="blackboard">早自习</div><span class="door-mark front-door">前门</span><span class="door-mark back-door">后门</span><div class="desk-grid" id="deskGrid"></div><div class="teacher" id="teacher">师</div><div class="class-return-countdown" id="classReturnCountdown"></div><article class="reading-cover hidden" id="classReading"></article><div class="class-controls"><button class="mode-btn on" id="classHide">藏书观察</button><button class="primary" id="classLook">看书</button><button class="primary" id="finishStudy">提前默写</button></div></div></section>
@@ -781,7 +781,7 @@ $$('.door').forEach(d=>d.onclick=()=>toast('使用摇杆控制角色走到门前
 let playerPos={x:50,y:10},moveVector={x:0,y:0},pressed={},lastMoveTime=performance.now(),nearDoor=null,crystalCooldown=0;
 const adventurer=$('#adventurer'),joystick=$('#joystick'),stick=$('#stick');
 function setJoystick(e){const r=joystick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),radius=r.width*.32,length=Math.hypot(dx,dy)||1,scale=Math.min(1,radius/length),x=dx*scale,y=dy*scale;stick.style.transform=`translate(${x}px,${y}px)`;moveVector.x=x/radius;moveVector.y=-y/radius}
-joystick.onpointerdown=e=>{joystick.setPointerCapture(e.pointerId);setJoystick(e)};joystick.onpointermove=e=>{if(joystick.hasPointerCapture(e.pointerId))setJoystick(e)};function releaseJoystick(){moveVector.x=0;moveVector.y=0;stick.style.transform='translate(0,0)'}joystick.onpointerup=releaseJoystick;joystick.onpointercancel=releaseJoystick;
+joystick.onpointerdown=e=>{politicsClickTarget=null;politicsClickDown=null;joystick.setPointerCapture(e.pointerId);setJoystick(e)};joystick.onpointermove=e=>{if(joystick.hasPointerCapture(e.pointerId)){politicsClickTarget=null;setJoystick(e)}};function releaseJoystick(){moveVector.x=0;moveVector.y=0;stick.style.transform='translate(0,0)'}joystick.onpointerup=releaseJoystick;joystick.onpointercancel=releaseJoystick;
 window.addEventListener('keydown',e=>{if(e.target instanceof Element&&e.target.matches('input,textarea,select,[contenteditable="true"]'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)){pressed[e.key.toLowerCase()]=true;e.preventDefault()}});window.addEventListener('keyup',e=>pressed[e.key.toLowerCase()]=false);
 function movementFrame(now){const dt=Math.min(.04,(now-lastMoveTime)/1000);lastMoveTime=now;if($('#homeView').classList.contains('active')){const kx=(pressed.arrowright||pressed.d?1:0)-(pressed.arrowleft||pressed.a?1:0),ky=(pressed.arrowup||pressed.w?1:0)-(pressed.arrowdown||pressed.s?1:0),vx=Math.max(-1,Math.min(1,moveVector.x+kx)),vy=Math.max(-1,Math.min(1,moveVector.y+ky)),moving=Math.abs(vx)+Math.abs(vy)>.05;if(moving){playerPos.x=Math.max(4,Math.min(96,playerPos.x+vx*25*dt));playerPos.y=Math.max(3,Math.min(97,playerPos.y+vy*18*dt));adventurer.style.left=playerPos.x+'%';adventurer.style.bottom=playerPos.y+'%';updateFacing(vx,vy)}followPlayer(dt);adventurer.classList.toggle('walking',moving);const enteredDoor=checkDoors();if(!enteredDoor&&$('#homeView').classList.contains('active'))checkCorridorCrystal()}requestAnimationFrame(movementFrame)}
 let facing='front-facing',turnTimer=null;function updateFacing(vx,vy){const next=Math.abs(vx)>.35&&Math.abs(vx)>Math.abs(vy)?(vx<0?'side-left':'side-right'):(vy>0?'back-facing':'front-facing');if(next===facing)return;adventurer.classList.remove('front-facing','back-facing','side-left','side-right');adventurer.classList.add(next,'turning');facing=next;clearTimeout(turnTimer);turnTimer=setTimeout(()=>adventurer.classList.remove('turning'),220)}
@@ -1667,11 +1667,11 @@ ensureSocialExtraTabs();removeDriftBottleFeature();
 function installFlameMonster(){
   const arena=$('#battleView .arena'),panel=$('#battlePanel');if(!arena||!panel)return;
   arena.querySelectorAll('.fighter').forEach(element=>element.remove());
-  if(!$('#flameMonsterStage'))panel.insertAdjacentHTML('beforebegin','<div class="battle-monster-stage" id="flameMonsterStage"><div class="flame-monster stage-1" id="flameMonster"><div class="monster-aura"></div><div class="monster-flames"><i></i><i></i><i></i><i></i><i></i></div><div class="monster-orb"><span class="monster-eye left"></span><span class="monster-eye right"></span><span class="monster-mouth"></span></div></div><div class="monster-stage-name" id="monsterStageName">幽焰幼体</div></div>')
+  if(!$('#flameMonsterStage'))panel.insertAdjacentHTML('beforebegin','<div class="battle-monster-stage" id="flameMonsterStage"><div class="flame-monster stage-1" id="flameMonster"><div class="monster-aura"></div><div class="monster-flames"><i></i><i></i><i></i><i></i><i></i></div><div class="monster-orb"><span class="monster-eye left"></span><span class="monster-eye right"></span><span class="monster-mouth"></span></div></div></div>')
 }
 let flameMonsterRound=1,monsterAnimationTimer=0;
 function updateFlameMonsterStage(round,animate=false){
-  const monster=$('#flameMonster');if(!monster)return;const stage=Math.max(1,Math.min(3,Number(round)||1));monster.classList.remove('stage-1','stage-2','stage-3');monster.classList.add(`stage-${stage}`);$('#monsterStageName').textContent=['幽焰幼体','紫焰噬兽','赤目灾焰'][stage-1];
+  const monster=$('#flameMonster');if(!monster)return;const stage=Math.max(1,Math.min(3,Number(round)||1));monster.classList.remove('stage-1','stage-2','stage-3');monster.classList.add(`stage-${stage}`);
   if(animate){monster.classList.remove('evolving');void monster.offsetWidth;monster.classList.add('evolving');setTimeout(()=>monster.classList.remove('evolving'),900)}flameMonsterRound=stage
 }
 function animateFlameMonster(type){
@@ -2021,7 +2021,7 @@ $('#raidsView .raid-grid').insertAdjacentHTML('beforeend','<button class="raid-c
 const raidDifficulty={bedroom:['★☆☆','一星'],classroom:['★★☆','二星'],pacman:['★★★','三星']};$$('#raidsView [data-raid]').forEach(card=>{const difficulty=raidDifficulty[card.dataset.raid];if(difficulty&&!card.querySelector('.raid-difficulty'))card.querySelector('h3').insertAdjacentHTML('afterend',`<span class="raid-difficulty">${difficulty[0]} <small>${difficulty[1]}难度</small></span>`)});
 const openRaidPrepV129=openRaidPrep;openRaidPrep=function(type){openRaidPrepV129(type);if(type==='pacman'){$('#raidPrepTitle').textContent='吃豆人记忆迷宫';setTimeout(()=>{$$('#raidParagraphs input').forEach((input,index)=>{if(index>0)input.checked=false});updateRaidSelectionHintV87()},0)}};
 $$('[data-raid]').forEach(button=>button.onclick=()=>openRaidPrep(button.dataset.raid));
-const raidMysteryPacman=['选择一个段落进入随机生成的像素迷宫。','每批会出现10个字，必须严格按原文顺序收集。','收集当前正确文字后会获得7秒能量，可以吃掉幽灵。','全部文字收集完成即可获得糖果，并可选择默写复习。'];raidMystery.pacman=raidMysteryPacman;
+const raidMysteryPacman=['选择一个段落进入随机生成的像素迷宫。','每批会出现10个字，必须严格按原文顺序收集。','吃掉地图中的能量球后，7秒内可以吃掉幽灵。','全部文字收集完成即可获得糖果，并可选择默写复习。'];raidMystery.pacman=raidMysteryPacman;
 openRaidTutorial=function(){const key=`raid-${raidChoice}`;openMysteryTutorial(key,raidMystery[raidChoice],()=>{ensureRaidAudio();if(raidChoice==='bedroom')startBedroomRaid();else if(raidChoice==='classroom')startClassroomRaid();else startPacmanRaid()})};
 
 let pacGame=null;
@@ -2029,7 +2029,7 @@ function pacTextChars(text){return[...String(text||'')].filter(char=>!/\s|[，�
 function pacMaze(cols=21,rows=17){const grid=Array.from({length:rows},()=>Array(cols).fill(1)),stack=[[1,1]];grid[1][1]=0;while(stack.length){const [x,y]=stack[stack.length-1],options=[[2,0],[-2,0],[0,2],[0,-2]].map(([dx,dy])=>[x+dx,y+dy,dx,dy]).filter(([nx,ny])=>nx>0&&ny>0&&nx<cols-1&&ny<rows-1&&grid[ny][nx]);if(!options.length){stack.pop();continue}const [nx,ny,dx,dy]=options[Math.floor(Math.random()*options.length)];grid[y+dy/2][x+dx/2]=0;grid[ny][nx]=0;stack.push([nx,ny])}for(let i=0;i<18;i++){const x=1+Math.floor(Math.random()*(cols-2)),y=1+Math.floor(Math.random()*(rows-2));if(x%2!==y%2)grid[y][x]=0}grid[1][2]=grid[1][3]=grid[2][1]=grid[3][1]=0;return grid}
 function pacOpenCells(grid){const cells=[];grid.forEach((row,y)=>row.forEach((wall,x)=>{if(!wall)cells.push({x,y})}));return cells}
 function pacOrderedPath(game,needed){const start=game.player,queue=[{x:start.x,y:start.y}],seen=new Map([[`${start.x},${start.y}`,null]]),dirs=[[1,0],[-1,0],[0,1],[0,-1]];for(let head=0;head<queue.length;head++){const cell=queue[head];shuffle([...dirs]).forEach(([dx,dy])=>{const x=cell.x+dx,y=cell.y+dy,key=`${x},${y}`;if(game.grid[y]?.[x]===0&&!seen.has(key)){seen.set(key,`${cell.x},${cell.y}`);queue.push({x,y})}})}const candidates=queue.slice(Math.max(1,Math.floor(queue.length*.7))),end=candidates[Math.floor(Math.random()*candidates.length)]||queue[queue.length-1],path=[];let key=`${end.x},${end.y}`;while(key){const[x,y]=key.split(',').map(Number);path.push({x,y});key=seen.get(key)}path.reverse();if(path.length<=needed){const extras=queue.filter(cell=>!path.some(point=>point.x===cell.x&&point.y===cell.y));path.push(...extras.slice(0,needed+1-path.length))}return path.slice(1)}
-function pacPlaceBatch(){const game=pacGame;if(!game)return;game.letters=[];const batch=game.chars.slice(game.collected,game.collected+10),path=pacOrderedPath(game,batch.length+8),step=Math.max(1,Math.floor(path.length/Math.max(1,batch.length)));batch.forEach((char,index)=>{const pathIndex=index===batch.length-1?path.length-1:Math.min(path.length-1,index*step),cell=path[pathIndex];if(cell)game.letters.push({...cell,char,index:game.collected+index})});game.powers=new Set();$('#pacmanProgress').textContent=`${game.collected} / ${game.chars.length}`}
+function pacPlaceBatch(){const game=pacGame;if(!game)return;game.letters=[];const batch=game.chars.slice(game.collected,game.collected+10),path=pacOrderedPath(game,batch.length+8),step=Math.max(1,Math.floor(path.length/Math.max(1,batch.length)));batch.forEach((char,index)=>{const pathIndex=index===batch.length-1?path.length-1:Math.min(path.length-1,index*step),cell=path[pathIndex];if(cell)game.letters.push({...cell,char,index:game.collected+index})});const occupied=new Set([`${game.player.x},${game.player.y}`,...game.letters.map(item=>`${item.x},${item.y}`),...game.ghosts.map(ghost=>`${ghost.x},${ghost.y}`)]),powerCells=shuffle(pacOpenCells(game.grid).filter(cell=>!occupied.has(`${cell.x},${cell.y}`)));game.powers=new Set(powerCells.slice(0,Math.min(6,powerCells.length)).map(cell=>`${cell.x},${cell.y}`));$('#pacmanProgress').textContent=`${game.collected} / ${game.chars.length}`}
 function startPacmanRaid(skipTutorial=false){const selected=selectedRaidParagraphs();if(selected.length!==1)return toast('吃豆人副本每次只能选择一个段落');if(!skipTutorial&&!localStorage.getItem('beisong-pacman-practical-tutorial'))return startPacmanTutorial();markRaidEntry('pacman');const text=raidTarget.text,grid=pacMaze(),cells=pacOpenCells(grid),far=[...cells].sort((a,b)=>(b.x+b.y)-(a.x+a.y));pacGame={active:true,text,chars:pacTextChars(text),grid,player:{x:1,y:1,dir:{x:0,y:0}},ghosts:far.slice(0,4).map((cell,index)=>({...cell,home:{...cell},color:['#ff4055','#ff9bd5','#3de0ee','#ff9b36'][index],stunnedUntil:0})),dots:new Set(cells.map(cell=>`${cell.x},${cell.y}`)),powers:new Set(shuffle(cells.slice(5)).slice(0,10).map(cell=>`${cell.x},${cell.y}`)),letters:[],collected:0,score:0,poweredUntil:0,safeUntil:Date.now()+5000,tick:null,tickCount:0,tutorial:false};pacGame.spawnSafeUntil=pacGame.safeUntil;$('#pacmanTitle').textContent='吃豆人记忆迷宫';$('#pacmanTutorialBox').hidden=true;pacPlaceBatch();openPacmanStage();toast('出生保护：5秒内不会被幽灵抓住');pacGame.tick=setInterval(pacTick,145);drawPacman()}
 function openPacmanStage(){$('#pacmanStage').hidden=false;$('.game-nav').style.display='none'}
 const pacTutorialMessages=['拖动摇杆向右，移动一格。','现在向下拖动摇杆。','接着向左移动。','最后向上移动，回到起点。','向右收集发光文字，文字会赋予能量状态。','继续向右，能量状态下可以吃掉幽灵。','教学完成。正式关卡中要按顺序收集全部文字。'];
@@ -2103,6 +2103,11 @@ pacResolveGhostCollision=function(ghost){
   const g=pacGame;
   if(!g?.active||ghost.x!==g.player.x||ghost.y!==g.player.y)return false;
   if(g.tutorial){ghost.x=ghost.home.x;ghost.y=ghost.home.y;return true}
+  if(Date.now()<g.poweredUntil){
+    ghost.x=ghost.home.x;ghost.y=ghost.home.y;ghost.stunnedUntil=Date.now()+1800;g.score=(g.score||0)+200;
+    toast('吃掉幽灵！');
+    return true
+  }
   failPacmanRaid();return true;
 };
 pacAfterPlayerMove=function(){
@@ -2110,6 +2115,10 @@ pacAfterPlayerMove=function(){
   const key=`${g.player.x},${g.player.y}`;
   const letter=g.letters.find(item=>item.x===g.player.x&&item.y===g.player.y&&item.index===g.collected);
   g.dots.delete(key);
+  if(g.powers.has(key)){
+    g.powers.delete(key);g.poweredUntil=Date.now()+7000;
+    toast('能量强化：7秒内可以吃掉幽灵')
+  }
   for(const ghost of g.ghosts)if(pacResolveGhostCollision(ghost)||!g.active)break;
   if(!g.active||!letter)return drawPacman();
   if(g.tutorial){g.letters=[];g.tutorialStep=5;showPacmanTutorialStep();drawPacman();return}
@@ -2126,7 +2135,7 @@ pacTick=function(){
 };
 const drawPacmanV146=drawPacman;
 drawPacman=function(){
-  if(pacGame){pacGame.safeUntil=0;pacGame.poweredUntil=0}
+  if(pacGame)pacGame.safeUntil=0;
   drawPacmanV146();
   const g=pacGame,canvas=$('#pacmanCanvas');if(!g||!canvas)return;
   const ctx=canvas.getContext('2d'),cw=canvas.width/g.grid[0].length,ch=canvas.height/g.grid.length;
@@ -3036,6 +3045,93 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   if (document.readyState === 'complete') setTimeout(finishStartup, 350);
   else addEventListener('load', () => setTimeout(finishStartup, 350), {once:true});
   setTimeout(finishStartup, 4500);
+})();
+</script>
+<script>
+/* 关键图像健康检查：缓存或网络短暂失败后自动重试并恢复显示。 */
+(() => {
+  const assets = {
+    sky: './starwish-sky.jpg',
+    bottle: './starwish-bottle-glass.png',
+    heroIdle: './player-walk-idle.png',
+    heroWalk: './player-walk-transparent.webp'
+  };
+  const resolved = {};
+  let checking = null;
+  let failureNotified = false;
+
+  function probe(source, attempt = 0) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const timer = setTimeout(() => { image.src = ''; reject(new Error('IMAGE_TIMEOUT')) }, 7000);
+      const url = attempt ? `${source}${source.includes('?') ? '&' : '?'}asset_retry=${Date.now()}_${attempt}` : source;
+      image.onload = async () => {
+        clearTimeout(timer);
+        try { if (image.decode) await image.decode() } catch (_) {}
+        image.naturalWidth && image.naturalHeight ? resolve(url) : reject(new Error('EMPTY_IMAGE'));
+      };
+      image.onerror = () => { clearTimeout(timer); reject(new Error('IMAGE_LOAD_FAILED')) };
+      image.src = url;
+    }).catch(error => attempt < 2 ? new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1))).then(() => probe(source, attempt + 1)) : Promise.reject(error));
+  }
+
+  function applyStarWishImages() {
+    const view = document.querySelector('#starWishView');
+    const art = view?.querySelector('.starwish-bottle-art');
+    if (view && resolved.sky) view.style.setProperty('background-image', `url("${resolved.sky}")`, 'important');
+    if (art && resolved.bottle && art.getAttribute('src') !== resolved.bottle) art.src = resolved.bottle;
+    if (art) art.style.visibility = resolved.bottle ? 'visible' : 'hidden';
+  }
+
+  function applyHeroImage() {
+    const hero = document.querySelector('#homeView #adventurer');
+    if (!hero || hero.classList.contains('character-blue')) return;
+    const walking = hero.classList.contains('walking');
+    const source = walking && resolved.heroWalk ? resolved.heroWalk : resolved.heroIdle;
+    if (source) {
+      hero.style.setProperty('background-image', `url("${source}")`, 'important');
+      hero.style.setProperty('visibility', 'visible', 'important');
+    }
+  }
+
+  async function checkCriticalImages(force = false) {
+    if (checking && !force) return checking;
+    checking = Promise.allSettled(Object.entries(assets).map(async ([key, source]) => {
+      resolved[key] = await probe(source);
+    })).then(results => {
+      applyStarWishImages();
+      applyHeroImage();
+      const failed = results.filter(result => result.status === 'rejected').length;
+      document.documentElement.classList.toggle('critical-image-error', failed > 0);
+      if (failed && !failureNotified) {
+        failureNotified = true;
+        if (typeof toast === 'function') toast('部分图像加载失败，正在后台重试');
+      }
+      if (!failed) failureNotified = false;
+      return failed;
+    }).finally(() => { checking = null });
+    return checking;
+  }
+
+  addEventListener('load', () => checkCriticalImages(), {once:true});
+  addEventListener('online', () => checkCriticalImages(true));
+  addEventListener('pageshow', () => checkCriticalImages());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkCriticalImages() });
+  document.addEventListener('click', event => {
+    if (event.target.closest('[data-starwish-open]')) checkCriticalImages(true).then(applyStarWishImages);
+  }, true);
+  const observeHero = () => {
+    const hero = document.querySelector('#homeView #adventurer');
+    if (!hero) return;
+    new MutationObserver(applyHeroImage).observe(hero, {attributes:true, attributeFilter:['class']});
+    applyHeroImage();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observeHero, {once:true}); else observeHero();
+  setInterval(() => {
+    const starWishOpen = document.querySelector('#starWishView.open');
+    const politicsVisible = document.querySelector('#homeView.active');
+    if (starWishOpen || politicsVisible) checkCriticalImages();
+  }, 30000);
 })();
 </script>
 </body>
