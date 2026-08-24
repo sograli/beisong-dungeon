@@ -1,5 +1,5 @@
-const CACHE = 'beisong-dungeon-v217';
-const ASSETS = ['./', './index.html', './chinese-content.js', './politics-pdf-content.js', './politics-pdf-fourth.js', './classical-words-data.js', './manifest.webmanifest', './app-icon.svg', './player-character.png', './player-walk-transparent.webp', './player-walk-idle.png', './starwish-sky.jpg', './starwish-bottle-glass.png', './memory-stage-intro.mp4', './memory-stage-intro.webp'];
+const CACHE = 'beisong-dungeon-v219';
+const ASSETS = ['./', './index.html', './chinese-content.js', './politics-pdf-content.js', './politics-pdf-fourth.js', './classical-words-data.js', './hall-of-sages.css', './hall-of-sages-data.js', './hall-of-sages.js', './manifest.webmanifest', './app-icon.svg', './player-character.png', './player-walk-transparent.webp', './player-walk-idle.png', './starwish-sky.jpg', './starwish-bottle-glass.png', './memory-stage-intro.mp4', './memory-stage-intro.webp', './sage-weber.jpg', './sage-nietzsche.jpg', './sage-freud.jpg', './sage-sartre.jpg', './sage-bauman.jpg', './sage-arendt.png', './sage-popper.jpg', './sage-hayek.jpg', './sage-berlin.jpg', './sage-marcuse.jpg'];
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));
