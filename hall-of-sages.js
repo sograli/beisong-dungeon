@@ -6,6 +6,7 @@
   let timer = 0;
   let visibleElapsed = 0;
   let lastTick = 0;
+  const expandedCores = new Set();
 
   function hallState() {
     state.sageHall = state.sageHall && typeof state.sageHall === 'object' ? state.sageHall : {};
@@ -30,12 +31,17 @@
       <section class="view sage-hall-view" id="sageHallView">
         <header class="sage-hall-head"><div class="sage-hall-title"><i>Ω</i><div><h1>英灵殿</h1><p>与十位哲人相遇，收集思想碎片</p></div></div><button class="sage-hall-back" id="leaveSageHall">回到庄园</button></header>
         <nav class="sage-hall-tabs"><button class="on" data-sage-tab="draw">抽取</button><button data-sage-tab="gallery">哲人图鉴</button></nav>
-        <main class="sage-hall-body"><div id="sageDrawPane" class="sage-draw-pane"></div><div id="sageGalleryPane" hidden></div></main>
+        <main class="sage-hall-body"><div id="sageDrawPane" class="sage-draw-pane"></div></main>
+      </section>
+      <section class="view sage-gallery-view" id="sageGalleryView">
+        <header class="sage-hall-head"><div class="sage-hall-title"><i>◇</i><div><h1>哲人图鉴</h1><p>查看已唤醒的思想与英灵碎片</p></div></div><button class="sage-hall-back" id="leaveSageGallery">返回英灵殿</button></header>
+        <main class="sage-gallery-body" id="sageGalleryPane"></main>
       </section>
       <section class="sage-study-modal" id="sageStudyModal" hidden><div class="sage-study-box" id="sageStudyBox"></div></section>`);
     const manor = document.querySelector('#manorView .manor-scene');
     if (manor && !manor.querySelector('.manor-hall')) manor.insertAdjacentHTML('beforeend','<button class="manor-building manor-hall" data-open-sage-hall="1"><i>Ω</i><b>英灵殿</b><small>哲思与英灵</small></button>');
     document.querySelector('#leaveSageHall').onclick = () => openManor();
+    document.querySelector('#leaveSageGallery').onclick = () => openSageHall();
     document.querySelectorAll('[data-sage-tab]').forEach(button => button.onclick = () => selectTab(button.dataset.sageTab));
     document.addEventListener('click', event => {
       const entrance = event.target.closest('[data-open-sage-hall]');
@@ -55,16 +61,21 @@
   window.openSageHall = openSageHall;
 
   function selectTab(tab) {
-    document.querySelectorAll('[data-sage-tab]').forEach(button => button.classList.toggle('on', button.dataset.sageTab === tab));
-    document.querySelector('#sageDrawPane').hidden = tab !== 'draw';
-    document.querySelector('#sageGalleryPane').hidden = tab !== 'gallery';
-    if (tab === 'draw') renderDraw(); else renderGallery();
+    if (tab === 'gallery') return openSageGallery();
+    document.querySelectorAll('[data-sage-tab]').forEach(button => button.classList.toggle('on', button.dataset.sageTab === 'draw'));
+    renderDraw();
+  }
+
+  function openSageGallery() {
+    show('#sageGalleryView');
+    document.querySelector('.game-nav').style.display = 'none';
+    renderGallery();
   }
 
   function renderDraw() {
     const hall = hallState();
     const checked = hall.lastCheckIn === localDayKey();
-    document.querySelector('#sageDrawPane').innerHTML = `<div class="sage-summon"><div class="sage-summon-orb">Ω</div><h2>召唤思想碎片</h2><div class="sage-checkin"><div><span>今日签到</span><b>抽卡次数 ${hall.drawTickets}</b></div><button class="sage-action" id="sageDailyCheckIn" ${checked ? 'disabled' : ''}>${checked ? '今日已签到' : '签到 +1'}</button></div><p>每次将随机遇见一条核心命题。完整浏览全部段落，碎片才会回应你。</p><button class="sage-action" id="drawSageCore" ${hall.drawTickets > 0 ? '' : 'disabled'}>抽取核心命题</button></div>`;
+    document.querySelector('#sageDrawPane').innerHTML = `<div class="sage-summon"><div class="sage-summon-animation" aria-hidden="true"><i></i><i></i><i></i><span></span></div><h2>召唤思想碎片</h2><div class="sage-checkin"><div><span>今日签到</span><b>抽卡次数 ${hall.drawTickets}</b></div><button class="sage-action" id="sageDailyCheckIn" ${checked ? 'disabled' : ''}>${checked ? '今日已签到' : '签到 +1'}</button></div><p>每次将随机遇见一条核心命题。完整浏览全部段落，碎片才会回应你。</p><button class="sage-action" id="drawSageCore" ${hall.drawTickets > 0 ? '' : 'disabled'}>呼唤英灵</button></div>`;
     document.querySelector('#sageDailyCheckIn').onclick = dailyCheckIn;
     document.querySelector('#drawSageCore').onclick = drawCore;
   }
@@ -138,6 +149,15 @@
 
   function renderGallery() {
     document.querySelector('#sageGalleryPane').innerHTML = `<div class="sage-gallery">${data().map(renderSage).join('')}</div>`;
+    document.querySelectorAll('[data-sage-core-toggle]').forEach(button => button.onclick = () => {
+      const id = button.dataset.sageCoreToggle;
+      const content = button.parentElement.querySelector('.sage-core-content');
+      const opening = content.hidden;
+      content.hidden = !opening;
+      button.setAttribute('aria-expanded', String(opening));
+      button.querySelector('span').textContent = opening ? '收起' : '展开';
+      if (opening) expandedCores.add(id); else expandedCores.delete(id);
+    });
   }
 
   function renderSage(sage) {
@@ -146,7 +166,7 @@
     const fragments = sage.cores.map(core => `<span class="sage-fragment ${isOwned(core.id) ? 'unlocked' : ''}">?</span>`).join('');
     const intro = complete ? `<div class="sage-intro">${sage.intro.map(text => `<p>${h(text)}</p>`).join('')}</div>` : '';
     const cores = sage.cores.map(core => isOwned(core.id)
-      ? `<div class="sage-core"><b>${h(core.title)}</b>${core.paragraphs.map(text => `<p>${h(text)}</p>`).join('')}</div>`
+      ? `<div class="sage-core"><button class="sage-core-toggle" data-sage-core-toggle="${h(core.id)}" aria-expanded="${expandedCores.has(core.id)}"><b>${h(core.title)}</b><span>${expandedCores.has(core.id) ? '收起' : '展开'}</span></button><div class="sage-core-content" ${expandedCores.has(core.id) ? '' : 'hidden'}>${core.paragraphs.map(text => `<p>${h(text)}</p>`).join('')}</div></div>`
       : `<div class="sage-core locked"><b>${h(core.title)}</b></div>`).join('');
     return `<article class="sage-card"><div class="sage-portrait"><img src="./${h(sage.image)}" alt="${h(sage.name)}" loading="lazy"><div class="sage-fragments count-${sage.cores.length}">${fragments}</div></div><div class="sage-card-copy"><h2>${h(sage.name)}</h2><div class="sage-progress">思想碎片 ${owned.length}/${sage.cores.length}</div>${intro}${cores}</div></article>`;
   }

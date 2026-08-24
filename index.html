@@ -205,6 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
 <style>.pacman-controls{display:grid;grid-template-columns:auto auto;gap:12px}.pacman-joystick{display:none}.pacman-dpad{display:grid;grid-template-columns:repeat(2,48px);grid-template-rows:repeat(2,48px);gap:6px}.pacman-dpad button{border:1px solid #5555cc;border-radius:8px;background:#171735;color:#ffe34d;font-size:22px;font-weight:700;user-select:none}.pacman-dpad button:active{background:#34347c;transform:scale(.96)}</style>
 </head>
 <body>
+<style>
+.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:17px;text-align:center}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}
+</style>
+<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>正在唤起记忆...</b></div></div>
 <div class="start-screen" id="startScreen" role="dialog" aria-label="背诵地牢首页" style="position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;background:#080b09;color:#f3d476;overflow:hidden">
   <div class="start-screen-inner" style="position:relative;text-align:center">
     <h1 style="margin:0 0 54px;font:900 clamp(52px,12vw,112px)/1.05 serif;letter-spacing:0">背诵地牢</h1>
@@ -3007,6 +3011,31 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   };
   $$('[data-board]').forEach(button=>button.onclick=()=>openLeaderboard(button.dataset.board));
   if(typeof mysteryTutorials!=='undefined'&&mysteryTutorials.leaderboard)mysteryTutorials.leaderboard[0]='排行榜记录等级、净化、树高、副本通关和周期充能。';
+})();
+</script>
+<script>
+(() => {
+  const loading = document.querySelector('#memoryWakeLoading');
+  let startupFinished = false;
+  window.showMemoryWakeLoading = () => loading?.classList.remove('done');
+  window.hideMemoryWakeLoading = () => loading?.classList.add('done');
+  function finishStartup() {
+    if (startupFinished) return;
+    startupFinished = true;
+    gameEntered = true;
+    document.querySelector('#startScreen')?.remove();
+    if (typeof openManor === 'function') openManor();
+    hideMemoryWakeLoading();
+  }
+  const cloudLoadBeforeWake = loadCloudProgress;
+  loadCloudProgress = async function() {
+    showMemoryWakeLoading();
+    try { return await cloudLoadBeforeWake() }
+    finally { hideMemoryWakeLoading() }
+  };
+  if (document.readyState === 'complete') setTimeout(finishStartup, 350);
+  else addEventListener('load', () => setTimeout(finishStartup, 350), {once:true});
+  setTimeout(finishStartup, 4500);
 })();
 </script>
 </body>
