@@ -2385,7 +2385,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 (function isolateCharacterAnimations(){const hero=$('#homeView #adventurer'),video=hero?.querySelector('.character-walk-video');if(video){video.pause();video.remove()}if(!hero)return;const sync=()=>{const blue=hero.classList.contains('character-blue');hero.classList.toggle('character-image',!blue);hero.style.setProperty('background',blue?'none':"url('./player-walk-transparent.png') center bottom / contain no-repeat",'important')};new MutationObserver(sync).observe(hero,{attributes:true,attributeFilter:['class']});sync()})();
 </script>
 <style>#homeView #adventurer.character-image,#homeView #adventurer.character-image.walking{background:url('./player-walk-transparent.png') center bottom/contain no-repeat!important}#homeView #adventurer.character-blue{background:none!important}</style>
-</body><style>#homeView #adventurer.character-image{background:url('./player-character.png') center bottom/contain no-repeat!important}#homeView #adventurer.character-image .character-walk-video,#homeView #adventurer.character-image>div{display:none!important;visibility:hidden!important;opacity:0!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.webp')!important}#homeView #adventurer.character-image.side-right,#homeView #adventurer.character-image.walking.side-right{animation:none!important;transform:translateX(-50%) scaleX(-1)!important}#homeView #adventurer.character-image.side-left,#homeView #adventurer.character-image.walking.side-left{animation:none!important;transform:translateX(-50%) scaleX(1)!important}.manor-exit{display:none!important}body>.starwish-icon{display:none!important;position:fixed!important;top:max(18px,env(safe-area-inset-top))!important;right:max(18px,env(safe-area-inset-right))!important;left:auto!important;z-index:2147482900!important;width:68px!important;height:74px!important;transform:none!important;background:#dffbff14!important}body:has(#manorView.active)>.starwish-icon{display:grid!important;place-items:center!important}@media(max-width:760px){.manor-scene{grid-template-columns:repeat(2,minmax(120px,1fr))!important;grid-template-rows:repeat(4,minmax(145px,1fr))!important;gap:34px 42px!important;padding-left:34px!important;padding-right:34px!important}.manor-building{width:112px!important;min-height:104px!important}.manor-campus{grid-column:1!important;grid-row:4!important}.manor-me{grid-column:2!important;grid-row:4!important;right:auto!important}.manor-campus,.manor-me{align-self:center;justify-self:center}body>.starwish-icon{top:max(10px,env(safe-area-inset-top))!important;right:max(10px,env(safe-area-inset-right))!important;width:58px!important;height:64px!important}}</style></html>
+<style>#homeView #adventurer.character-image{background:url('./player-character.png') center bottom/contain no-repeat!important}#homeView #adventurer.character-image .character-walk-video,#homeView #adventurer.character-image>div{display:none!important;visibility:hidden!important;opacity:0!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.webp')!important}#homeView #adventurer.character-image.side-right,#homeView #adventurer.character-image.walking.side-right{animation:none!important;transform:translateX(-50%) scaleX(-1)!important}#homeView #adventurer.character-image.side-left,#homeView #adventurer.character-image.walking.side-left{animation:none!important;transform:translateX(-50%) scaleX(1)!important}.manor-exit{display:none!important}body>.starwish-icon{display:none!important;position:fixed!important;top:max(18px,env(safe-area-inset-top))!important;right:max(18px,env(safe-area-inset-right))!important;left:auto!important;z-index:2147482900!important;width:68px!important;height:74px!important;transform:none!important;background:#dffbff14!important}body:has(#manorView.active)>.starwish-icon{display:grid!important;place-items:center!important}@media(max-width:760px){.manor-scene{grid-template-columns:repeat(2,minmax(120px,1fr))!important;grid-template-rows:repeat(4,minmax(145px,1fr))!important;gap:34px 42px!important;padding-left:34px!important;padding-right:34px!important}.manor-building{width:112px!important;min-height:104px!important}.manor-campus{grid-column:1!important;grid-row:4!important}.manor-me{grid-column:2!important;grid-row:4!important;right:auto!important}.manor-campus,.manor-me{align-self:center;justify-self:center}body>.starwish-icon{top:max(10px,env(safe-area-inset-top))!important;right:max(10px,env(safe-area-inset-right))!important;width:58px!important;height:64px!important}}</style>
 
 
 
@@ -2395,7 +2395,8 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 
 
 
-<style>#homeView #adventurer.character-image{width:92px!important;height:116px!important;background-image:url('./player-walk-idle.png')!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.webp')!important}@media(max-width:700px){#homeView #adventurer.character-image{width:78px!important;height:99px!important}}</style>
+<style>#homeView #adventurer.character-image{width:92px!important;height:116px!important;background-image:url('./player-walk-idle.png')!important}#homeView #adventurer.character-image.walking{background-image:url('./player-walk-idle.png')!important}.walk-asset-ready #homeView #adventurer.character-image.walking{background-image:url('./player-walk-transparent.webp')!important}@media(max-width:700px){#homeView #adventurer.character-image{width:78px!important;height:99px!important}}</style>
+<script>(()=>{const image=new Image();image.onload=()=>document.documentElement.classList.add('walk-asset-ready');image.src='./player-walk-transparent.webp'})();</script>
 <script>
 /* 星愿瓶功能 */
 (function () {
@@ -2939,32 +2940,32 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 })();
 </script>
 <style>
-.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff;opacity:0;transition:opacity .36s ease;will-change:opacity}.memory-prelude.visible{opacity:1}.memory-prelude[hidden]{display:none!important}.memory-prelude video{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}
+.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff;opacity:0;transition:opacity .36s ease;will-change:opacity}.memory-prelude.visible{opacity:1}.memory-prelude[hidden],.memory-prelude [hidden]{display:none!important}.memory-prelude video,.memory-prelude img{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}
 </style>
 <script>
 /* v209: play the supplied intro before paragraph-based levels. */
 (() => {
-  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" muted autoplay playsinline webkit-playsinline preload="auto"></video></section>');
+  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" muted autoplay playsinline webkit-playsinline preload="auto"></video><img id="memoryPreludeFallback" src="./memory-stage-intro.webp" alt="" hidden></section>');
   let active=false,finishing=false,nextAction=null,playRetry=0,playWatchdog=0,preludeObjectUrl='';
   const preludeAsset=fetch('./memory-stage-intro.mp4',{cache:'force-cache'}).then(response=>{if(!response.ok)throw new Error('video fetch failed');return response.blob()}).then(blob=>{preludeObjectUrl=URL.createObjectURL(blob);return preludeObjectUrl}).catch(()=>null);
-  function finish(){if(!active||finishing)return;finishing=true;clearTimeout(playWatchdog);const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.classList.remove('visible');setTimeout(()=>{const action=nextAction;nextAction=null;video.pause();video.currentTime=0;overlay.hidden=true;active=false;finishing=false;action?.()},380)}
+  function finish(){if(!active||finishing)return;finishing=true;clearTimeout(playWatchdog);const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),fallback=$('#memoryPreludeFallback');overlay.classList.remove('visible');setTimeout(()=>{const action=nextAction;nextAction=null;video.pause();video.currentTime=0;video.hidden=false;fallback.hidden=true;overlay.hidden=true;active=false;finishing=false;action?.()},380)}
+  function showPreludeFallback(video){if(!active||finishing)return;clearTimeout(playWatchdog);video.pause();video.hidden=true;const fallback=$('#memoryPreludeFallback');fallback.hidden=false;fallback.src='';requestAnimationFrame(()=>fallback.src='./memory-stage-intro.webp');playWatchdog=setTimeout(finish,4700)}
   function startVideo(video){
     video.defaultMuted=true;video.muted=true;video.setAttribute('muted','');
     const attempt=video.play();
-    if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2){video.load()}else if(++playRetry<3){setTimeout(()=>startVideo(video),120)}else{finish()}});
+    if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2&&playRetry++<2){video.load()}else if(playRetry++<3){setTimeout(()=>startVideo(video),120)}else{showPreludeFallback(video)}});
   }
-  window.playMemoryPrelude=async function(action){
-    if(active)return;active=true;finishing=false;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo');overlay.hidden=false;requestAnimationFrame(()=>overlay.classList.add('visible'));
-    const objectUrl=preludeObjectUrl||await preludeAsset;
-    if(!active)return;
+  window.playMemoryPrelude=function(action){
+    if(active)return;active=true;finishing=false;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),fallback=$('#memoryPreludeFallback');video.hidden=false;fallback.hidden=true;overlay.hidden=false;requestAnimationFrame(()=>overlay.classList.add('visible'));
+    const objectUrl=preludeObjectUrl;
     if(objectUrl&&video.src!==objectUrl){video.src=objectUrl;video.load()}
     video.currentTime=0;video.defaultMuted=true;video.muted=true;startVideo(video);
-    playWatchdog=setTimeout(finish,12000);
+    playWatchdog=setTimeout(()=>showPreludeFallback(video),3500);
   };
   const preludeVideo=$('#memoryPreludeVideo');
   preludeVideo.oncanplay=()=>{if(active&&preludeVideo.paused)startVideo(preludeVideo)};
   preludeVideo.onended=()=>{if(preludeVideo.duration&&preludeVideo.currentTime+.25<preludeVideo.duration&&playRetry++<2){startVideo(preludeVideo);return}finish()};
-  preludeVideo.onerror=()=>{if(active&&playRetry++<2){setTimeout(()=>{preludeVideo.src='./memory-stage-intro.mp4';preludeVideo.load();startVideo(preludeVideo)},150);return}toast('过场视频加载失败，已直接进入关卡');finish()};
+  preludeVideo.onerror=()=>{if(active&&playRetry++<2){setTimeout(()=>{preludeVideo.src='./memory-stage-intro.mp4';preludeVideo.load();startVideo(preludeVideo)},150);return}showPreludeFallback(preludeVideo)};
 
   const chineseStartBase=startChineseLevel;
   startChineseLevel=function(level){playMemoryPrelude(()=>chineseStartBase(level))};
@@ -3006,3 +3007,5 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   if(typeof mysteryTutorials!=='undefined'&&mysteryTutorials.leaderboard)mysteryTutorials.leaderboard[0]='排行榜记录等级、净化、树高、副本通关和周期充能。';
 })();
 </script>
+</body>
+</html>
