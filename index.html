@@ -3048,6 +3048,101 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 })();
 </script>
 <script>
+/* v230：清理纯标点语文错题、标注水晶球文章来源并统一透明反馈框。 */
+(() => {
+  const hasAnswerContent = value => {
+    try { return String(value || '').normalize('NFKC').replace(/[\s\p{P}]/gu, '').length > 0 }
+    catch (_) { return cnNorm(value).length > 0 }
+  };
+  const punctuationOnlyNorm = value => String(value || '').normalize('NFKC').replace(/\s/g, '');
+  const chineseReviewPass = (input, answer) => hasAnswerContent(answer)
+    ? cnSimilarity(input, answer) >= .8
+    : punctuationOnlyNorm(input) === punctuationOnlyNorm(answer);
+
+  clauses = function(textValue) {
+    const result = [];
+    String(textValue || '').split(/(?<=[。！？；])/).filter(Boolean).forEach(part => {
+      if (!hasAnswerContent(part)) {
+        if (result.length) result[result.length - 1] += part;
+        return;
+      }
+      result.push(part);
+    });
+    return result;
+  };
+
+  function cleanInvalidChineseCurses() {
+    const before = Array.isArray(state.chineseCurses) ? state.chineseCurses : [];
+    const valid = before.filter(curse => hasAnswerContent(curse?.answer));
+    if (valid.length !== before.length) {
+      state.chineseCurses = valid;
+      save();
+      toast(`已清理 ${before.length - valid.length} 道异常标点错题`);
+    }
+    return valid;
+  }
+
+  const addCurseBeforePunctuationFix = addCurse;
+  addCurse = function(work, kind, prompt, answer) {
+    if (!hasAnswerContent(answer)) {
+      toast('已跳过异常标点题');
+      return;
+    }
+    return addCurseBeforePunctuationFix(work, kind, prompt, answer);
+  };
+  const resolveOneCurseBeforePunctuationFix = resolveOneCurse;
+  resolveOneCurse = function(done) {
+    cleanInvalidChineseCurses();
+    return resolveOneCurseBeforePunctuationFix(done);
+  };
+
+  renderCrystalReview = function(index = 0) {
+    const chinese = state.subjectMode === 'chinese';
+    const curses = chinese ? cleanInvalidChineseCurses() : [];
+    const items = chinese
+      ? curses.sort((a,b)=>(state.chineseReviews[a.id]||0)-(state.chineseReviews[b.id]||0)).map(curse => {
+          const work = chineseWorks.find(item => item.id === curse.workId);
+          return {id:curse.id,q:curse.prompt,a:curse.answer,chinese:true,workTitle:work?.title || ''};
+        })
+      : allReviewItems().filter(item=>item.q&&item.a).sort((a,b)=>(state.reviews[a.id]||0)-(state.reviews[b.id]||0));
+    if (!items.length) return toast('水晶球暂时没有可复习的题目');
+    crystalReviewIndex = Math.max(0, Math.min(index, items.length - 1));
+    const item = items[crystalReviewIndex], forced = state.hp <= 0;
+    $('#closeReview').hidden = forced;
+    $('#reviewModal .sub').textContent = chinese ? '语文水晶球复习错题' : '政治水晶球复习考点';
+    const hint = crystalPunctuation(item.a), shown = [...hint].map((char,i)=>i%3===0||/[，。！？；：、]/.test(char)?char:'＿').join('');
+    const source = chinese && item.workTitle ? `<div class="crystal-source">来源：《${escapeHtml(item.workTitle)}》</div>` : '';
+    $('#reviewBody').innerHTML = `<div class="review-q">${source}<b>${escapeHtml(item.q)}</b></div><div class="crystal-hint"><span>提示字与标点位置（约30%）</span><div>${escapeHtml(shown)}</div></div><textarea class="answer-input" id="reviewInput" placeholder="完成题目后确认"></textarea><div id="reviewFeedback"></div><div class="action-row"><button class="small-btn" id="switchCrystalQuestion" ${items.length<2?'disabled':''}>换一题</button><button class="primary" id="submitReview">确认</button></div>`;
+    if (typeof addSpeechButton === 'function') addSpeechButton($('#reviewInput'));
+    $('#switchCrystalQuestion').onclick = () => renderCrystalReview((crystalReviewIndex + 1) % items.length);
+    $('#submitReview').onclick = () => {
+      const input = $('#reviewInput').value.trim();
+      if (!input) return toast('请先完成题目');
+      const passed = item.chinese ? chineseReviewPass(input,item.a) : reviewGrade(input,item.a).pass;
+      if (!passed) {
+        $('#reviewFeedback').innerHTML = `<div class="review-correction">错误内容已标红<br>${reviewDiff(input,item.a)}<br><b>正确答案：</b>${escapeHtml(item.a)}</div>`;
+        return;
+      }
+      const amount = item.chinese ? 50 : 30;
+      state.hp = Math.min(typeof getMaxHp==='function'?getMaxHp():100,state.hp+amount);
+      if (item.chinese) {
+        state.chineseReviews[item.id] = Date.now();
+        state.chineseCurses = state.chineseCurses.filter(curse=>curse.id!==item.id);
+      } else state.reviews[item.id] = Date.now();
+      save(); updateStats(); $('#reviewModal').classList.remove('open'); $('#closeReview').hidden=false;
+      toast(`复习通过，生命 +${amount}`);
+    };
+    $('#reviewModal').classList.add('open');
+  };
+  $('#crystalBtn').onclick = () => renderCrystalReview(0);
+  cleanInvalidChineseCurses();
+})();
+</script>
+<style>
+#reviewModal .review-correction{background:transparent!important;color:var(--ink)!important;border:1px solid rgba(224,189,102,.42);border-radius:8px;box-shadow:none!important}
+#reviewModal .crystal-source{width:max-content;max-width:100%;margin:0 0 9px;padding:4px 9px;border:1px solid rgba(224,189,102,.45);border-radius:999px;color:#e5c86f;font-size:12px;font-weight:400}
+</style>
+<script>
 /* 关键图像健康检查：缓存或网络短暂失败后自动重试并恢复显示。 */
 (() => {
   const assets = {
