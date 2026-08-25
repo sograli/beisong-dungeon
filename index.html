@@ -3229,5 +3229,65 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   }, 30000);
 })();
 </script>
+<style>
+/* v232: supplied animation plays behind the politics battle for its full lifetime. */
+#battleView .arena{position:relative;isolation:isolate;overflow:hidden}
+#battleView .battle-loop-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;background:#000}
+#battleView .arena::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:rgba(5,8,10,.34)}
+#battleView .fighter,#battleView .battle-panel{position:relative;z-index:1}
+</style>
+<script>
+(function installBattleLoopVideo(){
+  const view=document.querySelector('#battleView'),arena=view?.querySelector('.arena');
+  if(!view||!arena)return;
+  const video=document.createElement('video');
+  video.className='battle-loop-video';
+  video.src='./battle-loop.mp4';
+  video.muted=true;
+  video.defaultMuted=true;
+  video.loop=true;
+  video.playsInline=true;
+  video.preload='auto';
+  video.setAttribute('muted','');
+  video.setAttribute('playsinline','');
+  video.setAttribute('webkit-playsinline','');
+  video.setAttribute('aria-hidden','true');
+  arena.prepend(video);
+
+  let retryTimer=0;
+  function stop(reset=true){
+    clearTimeout(retryTimer);
+    video.pause();
+    if(reset){try{video.currentTime=0}catch(_){}}
+  }
+  function play(){
+    if(!view.classList.contains('active')||document.hidden)return;
+    video.muted=true;
+    const attempt=video.play();
+    if(attempt?.catch)attempt.catch(()=>{
+      clearTimeout(retryTimer);
+      retryTimer=setTimeout(()=>{
+        if(view.classList.contains('active')){video.load();video.play().catch(()=>{})}
+      },250);
+    });
+  }
+  function sync(){view.classList.contains('active')?play():stop()}
+  new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
+  video.addEventListener('canplay',play);
+  video.addEventListener('pause',()=>{
+    if(view.classList.contains('active')&&!document.hidden){
+      clearTimeout(retryTimer);
+      retryTimer=setTimeout(play,120);
+    }
+  });
+  document.addEventListener('visibilitychange',()=>document.hidden?video.pause():sync());
+  const oldVictory=window.settleVictory;
+  if(typeof oldVictory==='function')window.settleVictory=function(){stop();return oldVictory.apply(this,arguments)};
+  const oldDefeat=window.battleDefeated;
+  if(typeof oldDefeat==='function')window.battleDefeated=function(){stop();return oldDefeat.apply(this,arguments)};
+  window.stopBattleLoopVideo=stop;
+  sync();
+})();
+</script>
 </body>
 </html>

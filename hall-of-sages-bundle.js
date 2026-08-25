@@ -33,6 +33,7 @@ window.SAGE_HALL_DATA=[{"id":"weber","name":"马克斯·韦伯","shortName":"韦
   let visibleElapsed = 0;
   let lastTick = 0;
   const expandedCores = new Set();
+  let stopSummonPrelude = null;
 
   function hallState() {
     state.sageHall = state.sageHall && typeof state.sageHall === 'object' ? state.sageHall : {};
@@ -50,6 +51,22 @@ window.SAGE_HALL_DATA=[{"id":"weber","name":"马克斯·韦伯","shortName":"韦
 
   function isOwned(coreId) { return !!progress()[coreId] }
   function allCores() { return data().flatMap(sage => sage.cores.map(core => ({sage, core}))) }
+  function coreSymbolClass(title) {
+    const value = String(title || '');
+    if (/两种自由|分野/.test(value)) return 'split';
+    if (/祛魅|上帝死了|批判/.test(value)) return 'broken-ring';
+    if (/诸神|多元|视角/.test(value)) return 'constellation';
+    if (/理性|科学|证伪|分析/.test(value)) return 'orbit';
+    if (/铁笼|官僚|秩序|社会/.test(value)) return 'grid';
+    if (/虚无|超人|行动|自由/.test(value)) return 'ascent';
+    if (/无意识|欲望|精神|人格/.test(value)) return 'layers';
+    if (/道德|恶|责任|价值/.test(value)) return 'balance';
+    if (/消费|需求|单向度|异化/.test(value)) return 'loop';
+    return 'prism';
+  }
+  function coreSymbol(core) {
+    return `<div class="sage-core-symbol symbol-${coreSymbolClass(core?.title)}" aria-hidden="true"><i></i><i></i><i></i></div>`;
+  }
 
   function ensureView() {
     if (document.querySelector('#sageHallView')) return;
@@ -129,11 +146,57 @@ window.SAGE_HALL_DATA=[{"id":"weber","name":"马克斯·韦伯","shortName":"韦
     const random = window.crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 0xffffffff);
     pending = pool[random % pool.length];
     pageIndex = 0;
-    const box = document.querySelector('#sageStudyBox');
-    box.innerHTML = `<button class="sage-study-close" id="cancelSageDraw">× 放弃</button><div class="sage-draw-result"><div class="sage-draw-icon">${h(pending.core.title.charAt(0))}</div><h2>${h(pending.core.title)}</h2><button class="sage-action" id="beginSageStudy">开始学习</button></div>`;
     document.querySelector('#sageStudyModal').hidden = false;
+    playSummonAnimation();
+  }
+
+  function showDrawResult() {
+    stopSummonPrelude?.();
+    stopSummonPrelude = null;
+    if (!pending) return;
+    const box = document.querySelector('#sageStudyBox');
+    box.innerHTML = `<button class="sage-study-close" id="cancelSageDraw">× 放弃</button><div class="sage-draw-result">${coreSymbol(pending.core)}<h2>${h(pending.core.title)}</h2><button class="sage-action" id="beginSageStudy">开始学习</button></div>`;
     document.querySelector('#cancelSageDraw').onclick = failDraw;
     document.querySelector('#beginSageStudy').onclick = () => renderStudyPage(0);
+  }
+
+  function playSummonAnimation() {
+    stopSummonPrelude?.();
+    const box = document.querySelector('#sageStudyBox');
+    box.innerHTML = `<button class="sage-study-close" id="cancelSagePrelude">× 放弃</button><div class="sage-prelude"><video id="sageSummonVideo" muted playsinline webkit-playsinline preload="auto" aria-label="英灵召唤动画"><source src="./sage-summon-intro.mp4" type="video/mp4"></video><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
+    const video = document.querySelector('#sageSummonVideo');
+    let finished = false, retries = 0, watchdog = 0, resumeTimer = 0;
+    const visibilityHandler = () => { if (!document.hidden && !finished && video.paused) video.play().catch(() => retry()) };
+    const cleanup = () => {
+      clearTimeout(watchdog); clearTimeout(resumeTimer);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      video.onended = video.onerror = video.onloadedmetadata = video.oncanplay = video.onpause = null;
+      video.pause();
+    };
+    const finish = () => { if (finished) return; finished = true; cleanup(); showDrawResult() };
+    const armWatchdog = delay => { clearTimeout(watchdog); watchdog = setTimeout(finish, delay) };
+    const retry = () => {
+      if (finished) return;
+      if (retries >= 2) return finish();
+      retries++;
+      const status = box.querySelector('.sage-prelude-status');
+      if (status) status.textContent = `动画加载重试 ${retries}/2`;
+      video.src = `./sage-summon-intro.mp4?retry=${Date.now()}_${retries}`;
+      video.load();
+      video.play().catch(() => { resumeTimer = setTimeout(retry, 700) });
+    };
+    video.onloadedmetadata = () => armWatchdog(Math.min(180000, Math.max(20000, (Number(video.duration) || 20) * 1000 + 10000)));
+    video.oncanplay = () => video.play().catch(() => retry());
+    video.onerror = retry;
+    video.onended = finish;
+    video.onpause = () => {
+      if (!finished && !document.hidden && !video.ended) resumeTimer = setTimeout(() => video.play().catch(() => retry()), 250);
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
+    document.querySelector('#cancelSagePrelude').onclick = failDraw;
+    stopSummonPrelude = cleanup;
+    armWatchdog(30000);
+    video.play().catch(() => retry());
   }
 
   function renderStudyPage(index) {
@@ -168,6 +231,8 @@ window.SAGE_HALL_DATA=[{"id":"weber","name":"马克斯·韦伯","shortName":"韦
 
   function failDraw() {
     clearInterval(timer);
+    stopSummonPrelude?.();
+    stopSummonPrelude = null;
     pending = null;
     document.querySelector('#sageStudyBox').innerHTML = `<div class="sage-draw-result"><div class="sage-draw-icon">×</div><div class="sage-result-status fail">获取失败，本次抽卡无效</div><button class="sage-action" id="closeFailedDraw">返回英灵殿</button></div>`;
     document.querySelector('#closeFailedDraw').onclick = () => { document.querySelector('#sageStudyModal').hidden = true; renderDraw() };

@@ -1,12 +1,36 @@
 (() => {
   const h = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const data = () => Array.isArray(window.SAGE_HALL_DATA) ? window.SAGE_HALL_DATA : [];
+  function highlightKeyText(value, title = '') {
+    const text = String(value ?? '');
+    const terms = new Set();
+    [...text.matchAll(/[“「『]([^”」』]{2,18})[”」』]/g)].forEach(match => terms.add(match[1]));
+    String(title).replace(/[“”「」『』]/g, '').split(/[与和及、：:]/).map(term => term.trim()).filter(term => term.length >= 2).forEach(term => terms.add(term));
+    text.split(/[。！？；]/).forEach(sentence => {
+      const colon = sentence.search(/[：:]/);
+      if (colon >= 2 && colon <= 16) terms.add(sentence.slice(0, colon).replace(/^.*?[，,]/, '').trim());
+    });
+    const ranges = [];
+    [...terms].sort((a, b) => b.length - a.length).forEach(term => {
+      let from = 0, index;
+      while ((index = text.indexOf(term, from)) >= 0) {
+        if (!ranges.some(range => index < range.end && index + term.length > range.start)) ranges.push({start:index, end:index + term.length});
+        from = index + term.length;
+      }
+    });
+    ranges.sort((a, b) => a.start - b.start);
+    if (!ranges.length) return h(text);
+    let output = '', cursor = 0;
+    ranges.forEach(range => { output += h(text.slice(cursor, range.start)) + `<mark class="sage-key-highlight">${h(text.slice(range.start, range.end))}</mark>`; cursor = range.end });
+    return output + h(text.slice(cursor));
+  }
   let pending = null;
   let pageIndex = 0;
   let timer = 0;
   let visibleElapsed = 0;
   let lastTick = 0;
   const expandedCores = new Set();
+  let stopSummonPrelude = null;
 
   function hallState() {
     state.sageHall = state.sageHall && typeof state.sageHall === 'object' ? state.sageHall : {};
@@ -24,6 +48,22 @@
 
   function isOwned(coreId) { return !!progress()[coreId] }
   function allCores() { return data().flatMap(sage => sage.cores.map(core => ({sage, core}))) }
+  function coreSymbolClass(title) {
+    const value = String(title || '');
+    if (/两种自由|分野/.test(value)) return 'split';
+    if (/祛魅|上帝死了|批判/.test(value)) return 'broken-ring';
+    if (/诸神|多元|视角/.test(value)) return 'constellation';
+    if (/理性|科学|证伪|分析/.test(value)) return 'orbit';
+    if (/铁笼|官僚|秩序|社会/.test(value)) return 'grid';
+    if (/虚无|超人|行动|自由/.test(value)) return 'ascent';
+    if (/无意识|欲望|精神|人格/.test(value)) return 'layers';
+    if (/道德|恶|责任|价值/.test(value)) return 'balance';
+    if (/消费|需求|单向度|异化/.test(value)) return 'loop';
+    return 'prism';
+  }
+  function coreSymbol(core) {
+    return `<div class="sage-core-symbol symbol-${coreSymbolClass(core?.title)}" aria-hidden="true"><i></i><i></i><i></i></div>`;
+  }
 
   function ensureView() {
     if (document.querySelector('#sageHallView')) return;
@@ -103,11 +143,57 @@
     const random = window.crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 0xffffffff);
     pending = pool[random % pool.length];
     pageIndex = 0;
-    const box = document.querySelector('#sageStudyBox');
-    box.innerHTML = `<button class="sage-study-close" id="cancelSageDraw">× 放弃</button><div class="sage-draw-result"><div class="sage-draw-icon">${h(pending.core.title.charAt(0))}</div><h2>${h(pending.core.title)}</h2><button class="sage-action" id="beginSageStudy">开始学习</button></div>`;
     document.querySelector('#sageStudyModal').hidden = false;
+    playSummonAnimation();
+  }
+
+  function showDrawResult() {
+    stopSummonPrelude?.();
+    stopSummonPrelude = null;
+    if (!pending) return;
+    const box = document.querySelector('#sageStudyBox');
+    box.innerHTML = `<button class="sage-study-close" id="cancelSageDraw">× 放弃</button><div class="sage-draw-result">${coreSymbol(pending.core)}<h2>${h(pending.core.title)}</h2><button class="sage-action" id="beginSageStudy">开始学习</button></div>`;
     document.querySelector('#cancelSageDraw').onclick = failDraw;
     document.querySelector('#beginSageStudy').onclick = () => renderStudyPage(0);
+  }
+
+  function playSummonAnimation() {
+    stopSummonPrelude?.();
+    const box = document.querySelector('#sageStudyBox');
+    box.innerHTML = `<button class="sage-study-close" id="cancelSagePrelude">× 放弃</button><div class="sage-prelude"><video id="sageSummonVideo" muted playsinline webkit-playsinline preload="auto" aria-label="英灵召唤动画"><source src="./sage-summon-intro.mp4" type="video/mp4"></video><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
+    const video = document.querySelector('#sageSummonVideo');
+    let finished = false, retries = 0, watchdog = 0, resumeTimer = 0;
+    const visibilityHandler = () => { if (!document.hidden && !finished && video.paused) video.play().catch(() => retry()) };
+    const cleanup = () => {
+      clearTimeout(watchdog); clearTimeout(resumeTimer);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      video.onended = video.onerror = video.onloadedmetadata = video.oncanplay = video.onpause = null;
+      video.pause();
+    };
+    const finish = () => { if (finished) return; finished = true; cleanup(); showDrawResult() };
+    const armWatchdog = delay => { clearTimeout(watchdog); watchdog = setTimeout(finish, delay) };
+    const retry = () => {
+      if (finished) return;
+      if (retries >= 2) return finish();
+      retries++;
+      const status = box.querySelector('.sage-prelude-status');
+      if (status) status.textContent = `动画加载重试 ${retries}/2`;
+      video.src = `./sage-summon-intro.mp4?retry=${Date.now()}_${retries}`;
+      video.load();
+      video.play().catch(() => { resumeTimer = setTimeout(retry, 700) });
+    };
+    video.onloadedmetadata = () => armWatchdog(Math.min(180000, Math.max(20000, (Number(video.duration) || 20) * 1000 + 10000)));
+    video.oncanplay = () => video.play().catch(() => retry());
+    video.onerror = retry;
+    video.onended = finish;
+    video.onpause = () => {
+      if (!finished && !document.hidden && !video.ended) resumeTimer = setTimeout(() => video.play().catch(() => retry()), 250);
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
+    document.querySelector('#cancelSagePrelude').onclick = failDraw;
+    stopSummonPrelude = cleanup;
+    armWatchdog(30000);
+    video.play().catch(() => retry());
   }
 
   function renderStudyPage(index) {
@@ -117,7 +203,7 @@
     lastTick = performance.now();
     const paragraphs = pending.core.paragraphs;
     const last = index === paragraphs.length - 1;
-    document.querySelector('#sageStudyBox').innerHTML = `<button class="sage-study-close" id="cancelSageStudy">× 放弃</button><div class="sage-study-page"><div class="sage-study-meta"><span>${h(pending.core.title)}</span><span>${index + 1}/${paragraphs.length}</span></div><h3>思想段落</h3><p>${h(paragraphs[index])}</p><div class="sage-study-controls"><small id="sagePageWait">请浏览 5 秒</small><button class="sage-action" id="sagePageNext" disabled>${last ? '完成学习' : '下一段'}</button></div></div>`;
+    document.querySelector('#sageStudyBox').innerHTML = `<button class="sage-study-close" id="cancelSageStudy">× 放弃</button><div class="sage-study-page"><div class="sage-study-meta"><span>${h(pending.core.title)}</span><span>${index + 1}/${paragraphs.length}</span></div><h3>思想段落</h3><p>${highlightKeyText(paragraphs[index], pending.core.title)}</p><div class="sage-study-controls"><small id="sagePageWait">请浏览 5 秒</small><button class="sage-action" id="sagePageNext" disabled>${last ? '完成学习' : '下一段'}</button></div></div>`;
     document.querySelector('#cancelSageStudy').onclick = failDraw;
     const next = document.querySelector('#sagePageNext');
     timer = setInterval(() => {
@@ -142,6 +228,8 @@
 
   function failDraw() {
     clearInterval(timer);
+    stopSummonPrelude?.();
+    stopSummonPrelude = null;
     pending = null;
     document.querySelector('#sageStudyBox').innerHTML = `<div class="sage-draw-result"><div class="sage-draw-icon">×</div><div class="sage-result-status fail">获取失败，本次抽卡无效</div><button class="sage-action" id="closeFailedDraw">返回英灵殿</button></div>`;
     document.querySelector('#closeFailedDraw').onclick = () => { document.querySelector('#sageStudyModal').hidden = true; renderDraw() };
@@ -166,7 +254,7 @@
     const fragments = sage.cores.map(core => `<span class="sage-fragment ${isOwned(core.id) ? 'unlocked' : ''}">?</span>`).join('');
     const intro = complete ? `<div class="sage-intro">${sage.intro.map(text => `<p>${h(text)}</p>`).join('')}</div>` : '';
     const cores = sage.cores.map(core => isOwned(core.id)
-      ? `<div class="sage-core"><button class="sage-core-toggle" data-sage-core-toggle="${h(core.id)}" aria-expanded="${expandedCores.has(core.id)}"><b>${h(core.title)}</b><span>${expandedCores.has(core.id) ? '收起' : '展开'}</span></button><div class="sage-core-content" ${expandedCores.has(core.id) ? '' : 'hidden'}>${core.paragraphs.map(text => `<p>${h(text)}</p>`).join('')}</div></div>`
+      ? `<div class="sage-core"><button class="sage-core-toggle" data-sage-core-toggle="${h(core.id)}" aria-expanded="${expandedCores.has(core.id)}"><b>${h(core.title)}</b><span>${expandedCores.has(core.id) ? '收起' : '展开'}</span></button><div class="sage-core-content" ${expandedCores.has(core.id) ? '' : 'hidden'}>${core.paragraphs.map(text => `<p>${highlightKeyText(text, core.title)}</p>`).join('')}</div></div>`
       : `<div class="sage-core locked"><b>${h(core.title)}</b></div>`).join('');
     return `<article class="sage-card"><div class="sage-portrait"><img src="./${h(sage.image)}" alt="${h(sage.name)}" loading="lazy"><div class="sage-fragments count-${sage.cores.length}">${fragments}</div></div><div class="sage-card-copy"><h2>${h(sage.name)}</h2><div class="sage-progress">思想碎片 ${owned.length}/${sage.cores.length}</div>${intro}${cores}</div></article>`;
   }
