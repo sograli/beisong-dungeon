@@ -159,7 +159,7 @@
   function playSummonAnimation() {
     stopSummonPrelude?.();
     const box = document.querySelector('#sageStudyBox');
-    box.innerHTML = `<div class="sage-prelude-actions"><button id="skipSagePrelude">跳过动画</button><button id="cancelSagePrelude">取消并返还</button></div><div class="sage-prelude"><video id="sageSummonVideo" src="./sage-summon-intro.mp4" muted autoplay playsinline webkit-playsinline preload="metadata" disablepictureinpicture aria-label="英灵召唤动画"></video><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
+    box.innerHTML = `<div class="sage-prelude-actions"><button id="skipSagePrelude">跳过动画</button><button id="cancelSagePrelude">取消并返还</button></div><div class="sage-prelude"><video id="sageSummonVideo" src="./sage-summon-intro-mobile.mp4" muted autoplay playsinline webkit-playsinline preload="auto" disablepictureinpicture aria-label="英灵召唤动画"></video><button class="sage-prelude-start" id="startSagePrelude" hidden>点击播放</button><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
     const video = document.querySelector('#sageSummonVideo');
     video.controls = false;
     let finished = false, retries = 0, watchdog = 0, retryTimer = 0;
@@ -189,7 +189,8 @@
       const promise = video.play();
       if (promise?.catch) promise.catch(() => {
         if (finished) return;
-        if (retries++ >= 2) return finish();
+        document.querySelector('#startSagePrelude').hidden = false;
+        if (retries++ >= 2) return;
         const status = box.querySelector('.sage-prelude-status');
         if (status) status.textContent = `动画加载重试 ${retries}/2，可直接跳过`;
         clearTimeout(retryTimer);
@@ -198,12 +199,14 @@
     };
     video.onloadedmetadata = () => { clearTimeout(watchdog); watchdog = setTimeout(finish, Math.min(30000, Math.max(8000, (Number(video.duration) || 6) * 1000 + 4000))) };
     video.oncanplay = attemptPlay;
+    video.onplaying = () => { document.querySelector('#startSagePrelude').hidden = true; };
     video.onerror = () => retries++ >= 2 ? finish() : (retryTimer = setTimeout(() => { video.load(); attemptPlay() }, 450));
     video.onended = finish;
     video.onpause = () => { if (!finished && !document.hidden && !video.ended) retryTimer = setTimeout(attemptPlay, 180) };
     document.addEventListener('visibilitychange', visibilityHandler);
     document.querySelector('#skipSagePrelude').onclick = finish;
     document.querySelector('#cancelSagePrelude').onclick = refund;
+    document.querySelector('#startSagePrelude').onclick = () => { retries = 0; attemptPlay(); };
     stopSummonPrelude = cleanup;
     watchdog = setTimeout(finish, 12000);
     attemptPlay();

@@ -2959,31 +2959,33 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 })();
 </script>
 <style>
-.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff;opacity:0;transition:opacity .36s ease;will-change:opacity}.memory-prelude.visible{opacity:1}.memory-prelude[hidden],.memory-prelude [hidden]{display:none!important}.memory-prelude video,.memory-prelude img{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}.memory-prelude video::-webkit-media-controls,.memory-prelude video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none}.memory-prelude-skip{position:fixed;right:max(18px,env(safe-area-inset-right));top:max(18px,env(safe-area-inset-top));z-index:2;min-height:42px;padding:8px 15px;border:1px solid #fff8;border-radius:9px;background:#000b;color:#fff;cursor:pointer}
+.memory-prelude{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;background:#000;color:#fff;opacity:0;transition:opacity .36s ease;will-change:opacity}.memory-prelude.visible{opacity:1}.memory-prelude[hidden],.memory-prelude [hidden]{display:none!important}.memory-prelude video,.memory-prelude img{display:block;width:min(100vw,100vh);height:min(100vw,100vh);max-width:100%;max-height:100%;object-fit:contain;background:#000}.memory-prelude video::-webkit-media-controls,.memory-prelude video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none}.memory-prelude-skip{position:fixed;right:max(18px,env(safe-area-inset-right));top:max(18px,env(safe-area-inset-top));z-index:2;min-height:42px;padding:8px 15px;border:1px solid #fff8;border-radius:9px;background:#000b;color:#fff;cursor:pointer}.memory-prelude-start{position:fixed;left:50%;top:50%;z-index:3;transform:translate(-50%,-50%);min-width:132px;min-height:48px;border:1px solid #fff9;border-radius:9px;background:#171717e8;color:#fff;cursor:pointer}.memory-prelude-start[hidden]{display:none!important}
 </style>
 <script>
 /* v209: play the supplied intro before paragraph-based levels. */
 (() => {
-  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><button class="memory-prelude-skip" id="skipMemoryPrelude">跳过动画</button><video id="memoryPreludeVideo" src="./memory-stage-intro.mp4" muted autoplay playsinline webkit-playsinline preload="metadata" disablepictureinpicture></video><img id="memoryPreludeFallback" src="./memory-stage-intro.webp" alt="" hidden></section>');
+  document.body.insertAdjacentHTML('beforeend','<section class="memory-prelude" id="memoryPrelude" hidden><button class="memory-prelude-skip" id="skipMemoryPrelude">跳过动画</button><button class="memory-prelude-start" id="startMemoryPreludeVideo" hidden>点击播放</button><video id="memoryPreludeVideo" src="./memory-stage-intro-mobile.mp4" muted autoplay playsinline webkit-playsinline preload="auto" disablepictureinpicture></video><img id="memoryPreludeFallback" src="./memory-stage-intro.webp" alt="" hidden></section>');
   let active=false,finishing=false,nextAction=null,playRetry=0,playWatchdog=0;
-  function finish(){if(!active||finishing)return;finishing=true;clearTimeout(playWatchdog);const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),fallback=$('#memoryPreludeFallback');overlay.classList.remove('visible');setTimeout(()=>{const action=nextAction;nextAction=null;video.pause();video.currentTime=0;video.hidden=false;fallback.hidden=true;overlay.hidden=true;active=false;finishing=false;action?.()},380)}
+  function finish(){if(!active||finishing)return;finishing=true;clearTimeout(playWatchdog);const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),fallback=$('#memoryPreludeFallback');$('#startMemoryPreludeVideo').hidden=true;overlay.classList.remove('visible');setTimeout(()=>{const action=nextAction;nextAction=null;video.pause();video.currentTime=0;video.hidden=false;fallback.hidden=true;overlay.hidden=true;active=false;finishing=false;action?.()},380)}
   function showPreludeFallback(video){if(!active||finishing)return;clearTimeout(playWatchdog);video.pause();video.hidden=true;const fallback=$('#memoryPreludeFallback');fallback.hidden=false;fallback.src='';requestAnimationFrame(()=>fallback.src='./memory-stage-intro.webp');playWatchdog=setTimeout(finish,4700)}
   function startVideo(video){
     video.defaultMuted=true;video.muted=true;video.setAttribute('muted','');
     const attempt=video.play();
-    if(attempt?.catch)attempt.catch(()=>{if(video.readyState<2&&playRetry++<2){video.load()}else if(playRetry++<3){setTimeout(()=>startVideo(video),120)}else{showPreludeFallback(video)}});
+    if(attempt?.catch)attempt.catch(()=>{if(!active)return;$('#startMemoryPreludeVideo').hidden=false;if(video.readyState<2&&playRetry++<2)video.load()});
   }
   window.playMemoryPrelude=function(action){
     if(active)return;active=true;finishing=false;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),fallback=$('#memoryPreludeFallback');video.hidden=false;fallback.hidden=true;overlay.hidden=false;requestAnimationFrame(()=>overlay.classList.add('visible'));
-    if(!video.src.endsWith('/memory-stage-intro.mp4')){video.src='./memory-stage-intro.mp4';video.load()}
+    if(!video.src.endsWith('/memory-stage-intro-mobile.mp4')){video.src='./memory-stage-intro-mobile.mp4';video.load()}
     video.currentTime=0;video.defaultMuted=true;video.muted=true;startVideo(video);
-    playWatchdog=setTimeout(()=>showPreludeFallback(video),3500);
+    playWatchdog=setTimeout(()=>{if(active&&video.currentTime<.1&&video.paused)$('#startMemoryPreludeVideo').hidden=false},8000);
   };
   const preludeVideo=$('#memoryPreludeVideo');
   $('#skipMemoryPrelude').onclick=finish;
+  $('#startMemoryPreludeVideo').onclick=()=>{playRetry=0;startVideo(preludeVideo)};
+  preludeVideo.onplaying=()=>{$('#startMemoryPreludeVideo').hidden=true;clearTimeout(playWatchdog)};
   preludeVideo.oncanplay=()=>{if(active&&preludeVideo.paused)startVideo(preludeVideo)};
   preludeVideo.onended=()=>{if(preludeVideo.duration&&preludeVideo.currentTime+.25<preludeVideo.duration&&playRetry++<2){startVideo(preludeVideo);return}finish()};
-  preludeVideo.onerror=()=>{if(active&&playRetry++<2){setTimeout(()=>{preludeVideo.src='./memory-stage-intro.mp4';preludeVideo.load();startVideo(preludeVideo)},150);return}showPreludeFallback(preludeVideo)};
+  preludeVideo.onerror=()=>{if(active&&playRetry++<2){setTimeout(()=>{preludeVideo.src='./memory-stage-intro-mobile.mp4';preludeVideo.load();startVideo(preludeVideo)},150);return}showPreludeFallback(preludeVideo)};
 
   const chineseStartBase=startChineseLevel;
   startChineseLevel=function(level){playMemoryPrelude(()=>chineseStartBase(level))};
@@ -3247,7 +3249,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   if(!view||!arena)return;
   const video=document.createElement('video');
   video.className='battle-loop-video';
-  video.src='./battle-loop.mp4';
+  video.src='./battle-loop-mobile.mp4';
   video.muted=true;
   video.defaultMuted=true;
   video.loop=true;
