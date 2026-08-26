@@ -78,8 +78,7 @@
         <main class="sage-gallery-body" id="sageGalleryPane"></main>
       </section>
       <section class="sage-study-modal" id="sageStudyModal" hidden><div class="sage-study-box" id="sageStudyBox"></div></section>`);
-    const manor = document.querySelector('#manorView .manor-scene');
-    if (manor && !manor.querySelector('.manor-hall')) manor.insertAdjacentHTML('beforeend','<button class="manor-building manor-hall" data-open-sage-hall="1"><i>Ω</i><b>英灵殿</b><small>哲思与英灵</small></button>');
+    if (!document.body.querySelector(':scope > .manor-hall')) document.body.insertAdjacentHTML('beforeend','<button class="manor-building manor-hall" data-open-sage-hall="1"><i>Ω</i><b>英灵殿</b><small>哲思与英灵</small></button>');
     document.querySelector('#leaveSageHall').onclick = () => openManor();
     document.querySelector('#leaveSageGallery').onclick = () => openSageHall();
     document.querySelectorAll('[data-sage-tab]').forEach(button => button.onclick = () => selectTab(button.dataset.sageTab));
@@ -160,40 +159,54 @@
   function playSummonAnimation() {
     stopSummonPrelude?.();
     const box = document.querySelector('#sageStudyBox');
-    box.innerHTML = `<button class="sage-study-close" id="cancelSagePrelude">× 放弃</button><div class="sage-prelude"><video id="sageSummonVideo" muted playsinline webkit-playsinline preload="auto" aria-label="英灵召唤动画"><source src="./sage-summon-intro.mp4" type="video/mp4"></video><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
+    box.innerHTML = `<div class="sage-prelude-actions"><button id="skipSagePrelude">跳过动画</button><button id="cancelSagePrelude">取消并返还</button></div><div class="sage-prelude"><video id="sageSummonVideo" src="./sage-summon-intro.mp4" muted autoplay playsinline webkit-playsinline preload="metadata" disablepictureinpicture aria-label="英灵召唤动画"></video><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
     const video = document.querySelector('#sageSummonVideo');
-    let finished = false, retries = 0, watchdog = 0, resumeTimer = 0;
-    const visibilityHandler = () => { if (!document.hidden && !finished && video.paused) video.play().catch(() => retry()) };
+    video.controls = false;
+    let finished = false, retries = 0, watchdog = 0, retryTimer = 0;
+    const visibilityHandler = () => { if (!document.hidden && !finished && video.paused) attemptPlay() };
     const cleanup = () => {
-      clearTimeout(watchdog); clearTimeout(resumeTimer);
+      clearTimeout(watchdog); clearTimeout(retryTimer);
       document.removeEventListener('visibilitychange', visibilityHandler);
       video.onended = video.onerror = video.onloadedmetadata = video.oncanplay = video.onpause = null;
       video.pause();
     };
     const finish = () => { if (finished) return; finished = true; cleanup(); showDrawResult() };
-    const armWatchdog = delay => { clearTimeout(watchdog); watchdog = setTimeout(finish, delay) };
-    const retry = () => {
+    const refund = () => {
       if (finished) return;
-      if (retries >= 2) return finish();
-      retries++;
-      const status = box.querySelector('.sage-prelude-status');
-      if (status) status.textContent = `动画加载重试 ${retries}/2`;
-      video.src = `./sage-summon-intro.mp4?retry=${Date.now()}_${retries}`;
-      video.load();
-      video.play().catch(() => { resumeTimer = setTimeout(retry, 700) });
+      finished = true;
+      cleanup();
+      hallState().drawTickets += 1;
+      pending = null;
+      stopSummonPrelude = null;
+      save();
+      document.querySelector('#sageStudyModal').hidden = true;
+      renderDraw();
+      toast('已取消召唤，返还 1 次抽卡次数');
     };
-    video.onloadedmetadata = () => armWatchdog(Math.min(180000, Math.max(20000, (Number(video.duration) || 20) * 1000 + 10000)));
-    video.oncanplay = () => video.play().catch(() => retry());
-    video.onerror = retry;
+    const attemptPlay = () => {
+      if (finished) return;
+      video.muted = true;
+      const promise = video.play();
+      if (promise?.catch) promise.catch(() => {
+        if (finished) return;
+        if (retries++ >= 2) return finish();
+        const status = box.querySelector('.sage-prelude-status');
+        if (status) status.textContent = `动画加载重试 ${retries}/2，可直接跳过`;
+        clearTimeout(retryTimer);
+        retryTimer = setTimeout(() => { video.load(); attemptPlay() }, 450);
+      });
+    };
+    video.onloadedmetadata = () => { clearTimeout(watchdog); watchdog = setTimeout(finish, Math.min(30000, Math.max(8000, (Number(video.duration) || 6) * 1000 + 4000))) };
+    video.oncanplay = attemptPlay;
+    video.onerror = () => retries++ >= 2 ? finish() : (retryTimer = setTimeout(() => { video.load(); attemptPlay() }, 450));
     video.onended = finish;
-    video.onpause = () => {
-      if (!finished && !document.hidden && !video.ended) resumeTimer = setTimeout(() => video.play().catch(() => retry()), 250);
-    };
+    video.onpause = () => { if (!finished && !document.hidden && !video.ended) retryTimer = setTimeout(attemptPlay, 180) };
     document.addEventListener('visibilitychange', visibilityHandler);
-    document.querySelector('#cancelSagePrelude').onclick = failDraw;
+    document.querySelector('#skipSagePrelude').onclick = finish;
+    document.querySelector('#cancelSagePrelude').onclick = refund;
     stopSummonPrelude = cleanup;
-    armWatchdog(30000);
-    video.play().catch(() => retry());
+    watchdog = setTimeout(finish, 12000);
+    attemptPlay();
   }
 
   function renderStudyPage(index) {
