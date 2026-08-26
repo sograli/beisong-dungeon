@@ -3338,5 +3338,19 @@ body>.manor-hall{display:none!important;left:auto!important;right:calc(max(14px,
   apply();
 })();
 </script>
+<style>
+/* v241: battle monster removed; keep the question panel centered. */
+#battleView .arena{grid-template-rows:1fr!important;align-items:center!important;padding-top:22px!important}
+#battleView .battle-monster-stage,#battleView #flameMonsterStage,#battleView #flameMonster{display:none!important}
+@media(max-width:600px){#battleView .arena{padding-top:12px!important}#battleView .battle-panel{align-self:center!important}}
+</style>
+<script>
+/* Remove the legacy particle monster without changing battle rules. */
+(() => {
+  const removeBattleMonster=()=>document.querySelector('#battleView #flameMonsterStage')?.remove();
+  removeBattleMonster();
+  new MutationObserver(removeBattleMonster).observe(document.querySelector('#battleView'),{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
