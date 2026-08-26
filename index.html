@@ -3050,7 +3050,8 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
     await Promise.all(startupVideos.map(async url => {
       if (!(await cache.match(url))) {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 60000);
+        // 预载只作性能优化，不能阻塞进入庄园；移动网络较慢时快速放弃本次缓存。
+        const timeout = setTimeout(() => controller.abort(), 8000);
         try {
           const response = await fetch(url,{cache:'reload',signal:controller.signal});
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -3069,8 +3070,11 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
       setWakeProgress(8, '正在读取本地存档', '检查账号进度与本地设置');
       await Promise.resolve();
       setWakeProgress(12, '正在准备题库', '加载思政、语文与实词数据');
-      try { await cacheStartupVideos() }
-      catch (error) { console.warn('动画预载失败，将在需要时重试',error); setWakeProgress(38, '动画暂未全部缓存', '网络恢复后会自动继续下载') }
+      // 动画后台预载，不让网络状况卡住启动页。
+      cacheStartupVideos().catch(error => {
+        console.warn('动画预载失败，将在需要时重试',error);
+        if (!startupFinished) setWakeProgress(38, '动画将在后台继续缓存', '网络恢复后会自动重试');
+      });
       if (startupFinished) return;
       setWakeProgress(68, '正在初始化庄园场景', '载入地形、建筑与玩家形象');
       await new Promise(resolve => requestAnimationFrame(resolve));
