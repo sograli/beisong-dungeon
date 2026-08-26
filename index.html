@@ -210,9 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
 </head>
 <body>
 <style>
-.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:17px;text-align:center}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}
+.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:12px;text-align:center}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}.memory-wake-inner small{min-height:18px;color:#bba970;font-size:12px}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}
 </style>
-<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>正在唤起记忆...</b></div></div>
+<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>正在唤起记忆...</b><small id="memoryWakeProgress">正在准备资源</small></div></div>
 <div class="start-screen" id="startScreen" role="dialog" aria-label="背诵地牢首页" style="position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;background:#080b09;color:#f3d476;overflow:hidden">
   <div class="start-screen-inner" style="position:relative;text-align:center">
     <h1 style="margin:0 0 54px;font:900 clamp(52px,12vw,112px)/1.05 serif;letter-spacing:0">背诵地牢</h1>
@@ -3030,16 +3030,45 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 <script>
 (() => {
   const loading = document.querySelector('#memoryWakeLoading');
-  let startupFinished = false;
+  const progress = document.querySelector('#memoryWakeProgress');
+  const startupVideos = ['./memory-stage-intro-mobile.mp4','./sage-summon-intro-mobile.mp4','./battle-loop-mobile.mp4'];
+  let startupFinished = false, startupPromise = null;
   window.showMemoryWakeLoading = () => loading?.classList.remove('done');
   window.hideMemoryWakeLoading = () => loading?.classList.add('done');
+  async function cacheStartupVideos() {
+    if (!location.protocol.startsWith('http') || !('caches' in window)) return;
+    const cache = await caches.open('beisong-dungeon-v244');
+    let complete = 0;
+    await Promise.all(startupVideos.map(async url => {
+      if (!(await cache.match(url))) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 60000);
+        try {
+          const response = await fetch(url,{cache:'reload',signal:controller.signal});
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const bytes = await response.arrayBuffer();
+          await cache.put(url,new Response(bytes,{status:200,headers:{'Content-Type':'video/mp4','Content-Length':String(bytes.byteLength),'Accept-Ranges':'bytes'}}));
+        } finally { clearTimeout(timeout) }
+      }
+      complete++;
+      if (progress) progress.textContent = `正在预载动画 ${complete} / ${startupVideos.length}`;
+    }));
+  }
   function finishStartup() {
-    if (startupFinished) return;
-    startupFinished = true;
-    gameEntered = true;
-    document.querySelector('#startScreen')?.remove();
-    if (typeof openManor === 'function') openManor();
-    hideMemoryWakeLoading();
+    if (startupPromise) return startupPromise;
+    startupPromise = (async () => {
+      showMemoryWakeLoading();
+      if (progress) progress.textContent='正在预载动画 0 / 3';
+      try { await cacheStartupVideos() }
+      catch (error) { console.warn('动画预载失败，将在需要时重试',error); if(progress)progress.textContent='部分动画将在联网后继续缓存' }
+      if (startupFinished) return;
+      startupFinished = true;
+      gameEntered = true;
+      document.querySelector('#startScreen')?.remove();
+      if (typeof openManor === 'function') openManor();
+      hideMemoryWakeLoading();
+    })();
+    return startupPromise;
   }
   const cloudLoadBeforeWake = loadCloudProgress;
   loadCloudProgress = async function() {
@@ -3047,9 +3076,8 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
     try { return await cloudLoadBeforeWake() }
     finally { hideMemoryWakeLoading() }
   };
-  if (document.readyState === 'complete') setTimeout(finishStartup, 350);
-  else addEventListener('load', () => setTimeout(finishStartup, 350), {once:true});
-  setTimeout(finishStartup, 4500);
+  if (document.readyState === 'complete') setTimeout(finishStartup, 100);
+  else addEventListener('load', () => setTimeout(finishStartup, 100), {once:true});
 })();
 </script>
 <script>
