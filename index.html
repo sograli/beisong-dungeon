@@ -1079,8 +1079,14 @@ const chineseWorks=[
 ];
 if(Array.isArray(window.CHINESE_DOC_WORKS)){window.CHINESE_DOC_WORKS.forEach(work=>{const index=chineseWorks.findIndex(item=>item.title===work.title);if(index>=0)chineseWorks[index]=work;else chineseWorks.push(work)})}
 const classicalWordRules=Array.isArray(window.CLASSICAL_WORD_RULES)?window.CLASSICAL_WORD_RULES:[];
-// 校正“当”在《登泰山记》中的语境义：当道者意为挡在道路上。
-if(Array.isArray(window.classicalWordBank)) window.classicalWordBank.forEach(entry=>entry.senses?.forEach(sense=>{if(String(sense.example||'').includes('当道者')) sense.meaning='挡在道路上，挡住道路';}));
+// 校正原始资料中误识别为数字“1”的实词释义；按例句匹配，避免影响其他义项。
+if(Array.isArray(window.classicalWordBank)) window.classicalWordBank.forEach(entry=>entry.senses?.forEach(sense=>{
+  const example=String(sense.example||'');
+  if(entry.word==='当'&&example.includes('崖限当道者'))sense.meaning='挡在道路上，挡住道路';
+  else if(entry.word==='定'&&example.includes('食顷始定'))sense.meaning='停止，平静下来';
+  else if(entry.word==='赋'&&example.includes('复若赋'))sense.meaning='赋税';
+  else if(entry.word==='故'&&example.includes('广故数言欲亡'))sense.meaning='故意';
+}));
 chineseWorks.forEach(work=>work.paragraphs.forEach(paragraph=>{paragraph.words=[];paragraph.markedWords=[];const seen=new Set();classicalWordRules.forEach(([context,word,meaning])=>{if(!paragraph.text.includes(context))return;const key=word+'\u0000'+meaning;if(!seen.has(key)){seen.add(key);paragraph.words.push([word,meaning])}})}));
 let cnSession=null,selectedChineseWork=null;
 createChineseUi();createChineseUi=()=>{};

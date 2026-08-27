@@ -161,6 +161,7 @@
     const box = document.querySelector('#sageStudyBox');
     box.innerHTML = `<div class="sage-prelude-actions"><button id="skipSagePrelude">跳过动画</button><button id="cancelSagePrelude">取消并返还</button></div><div class="sage-prelude"><video id="sageSummonVideo" src="./sage-summon-intro-mobile.mp4" muted autoplay playsinline webkit-playsinline preload="auto" disablepictureinpicture aria-label="英灵召唤动画"></video><button class="sage-prelude-start" id="startSagePrelude" hidden>点击播放</button><div class="sage-prelude-status">正在呼唤英灵...</div></div>`;
     const video = document.querySelector('#sageSummonVideo');
+    if(window.fastVideoUrl)window.fastVideoUrl('sage-summon-intro-mobile.mp4').then(src=>{if(video.src!==src){video.src=src;video.load()}});
     video.controls = false;
     let finished = false, retries = 0, watchdog = 0, retryTimer = 0;
     const visibilityHandler = () => { if (!document.hidden && !finished && video.paused) attemptPlay() };
