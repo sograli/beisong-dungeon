@@ -248,6 +248,21 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="modal" id="raidResultModal"><div class="modal-box victory"><div class="gem" id="raidResultIcon">◆</div><h2 id="raidResultTitle">副本完成</h2><div class="result-score" id="raidResultScore"></div><p id="raidResultBody"></p><button class="primary" id="closeRaidResult">返回副本大厅</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  const remoteBases=[
+    'https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/',
+    'https://fastly.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/',
+    'https://testingcf.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/',
+    'https://raw.githubusercontent.com/sograli/beisong-dungeon/main/assets/videos/'
+  ];
+  let preferred='',selecting=null;
+  async function probe(base,file){const controller=new AbortController(),started=performance.now(),timer=setTimeout(()=>controller.abort(),2600);try{const response=await fetch(base+file,{method:'GET',headers:{Range:'bytes=0-32767'},cache:'no-store',signal:controller.signal});if(!response.ok&&response.status!==206)throw new Error(String(response.status));await response.arrayBuffer();return{base,time:performance.now()-started}}catch(_){return null}finally{clearTimeout(timer)}}
+  async function choose(file){if(preferred)return preferred;if(selecting)return selecting;selecting=Promise.all(remoteBases.map(base=>probe(base,file))).then(results=>{const winner=results.filter(Boolean).sort((a,b)=>a.time-b.time)[0];preferred=winner?.base||'./';return preferred}).finally(()=>{selecting=null});return selecting}
+  window.fastVideoUrl=async file=>(await choose(file))+file;
+  window.resetVideoCdn=()=>{preferred='';selecting=null};
+})();
+</script>
 <script src="./chinese-content.js"></script>
 <script src="./chinese-pdf60-additions.js"></script>
 <script src="./politics-pdf-content.js"></script>
@@ -2984,9 +2999,9 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
     const attempt=video.play();
     if(attempt?.catch)attempt.catch(()=>{if(!active)return;$('#startMemoryPreludeVideo').hidden=false;if(video.readyState<2&&playRetry++<2)video.load()});
   }
-  window.playMemoryPrelude=function(action){
+  window.playMemoryPrelude=async function(action){
     if(active)return;active=true;finishing=false;nextAction=action;playRetry=0;const overlay=$('#memoryPrelude'),video=$('#memoryPreludeVideo'),fallback=$('#memoryPreludeFallback');video.hidden=false;fallback.hidden=true;overlay.hidden=false;requestAnimationFrame(()=>overlay.classList.add('visible'));
-    if(!video.src.endsWith('/memory-stage-intro-mobile.mp4')){video.src='https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/memory-stage-intro-mobile.mp4';video.load()}
+    const selectedSrc=await fastVideoUrl('memory-stage-intro-mobile.mp4');if(video.src!==selectedSrc){video.src=selectedSrc;video.load()}
     video.currentTime=0;video.defaultMuted=true;video.muted=true;startVideo(video);
     playWatchdog=setTimeout(()=>{if(active&&video.currentTime<.1&&video.paused)$('#startMemoryPreludeVideo').hidden=false},8000);
   };
@@ -2996,7 +3011,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   preludeVideo.onplaying=()=>{$('#startMemoryPreludeVideo').hidden=true;clearTimeout(playWatchdog)};
   preludeVideo.oncanplay=()=>{if(active&&preludeVideo.paused)startVideo(preludeVideo)};
   preludeVideo.onended=()=>{if(preludeVideo.duration&&preludeVideo.currentTime+.25<preludeVideo.duration&&playRetry++<2){startVideo(preludeVideo);return}finish()};
-  preludeVideo.onerror=()=>{if(active&&playRetry++<2){setTimeout(()=>{preludeVideo.src='https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/memory-stage-intro-mobile.mp4';preludeVideo.load();startVideo(preludeVideo)},150);return}showPreludeFallback(preludeVideo)};
+  preludeVideo.onerror=()=>{if(active&&playRetry++<2){resetVideoCdn();setTimeout(async()=>{preludeVideo.src=await fastVideoUrl('memory-stage-intro-mobile.mp4');preludeVideo.load();startVideo(preludeVideo)},150);return}showPreludeFallback(preludeVideo)};
 
   const chineseStartBase=startChineseLevel;
   startChineseLevel=function(level){playMemoryPrelude(()=>chineseStartBase(level))};
@@ -3049,7 +3064,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   const resourceFloat = document.querySelector('#resourceLoadFloat');
   const resourceText = document.querySelector('#resourceLoadText');
   const resourceBar = document.querySelector('#resourceLoadBar');
-  const startupVideos = ['https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/memory-stage-intro-mobile.mp4','https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/sage-summon-intro-mobile.mp4','https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/battle-loop-mobile.mp4'];
+  const startupVideoFiles = ['memory-stage-intro-mobile.mp4','sage-summon-intro-mobile.mp4','battle-loop-mobile.mp4'];
   let startupFinished = false, startupPromise = null;
   function setWakeProgress(value, status, description) {
     if (progressBar) progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
@@ -3073,6 +3088,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   window.hideMemoryWakeLoading = () => loading?.classList.add('done');
   async function cacheStartupVideos() {
     if (!location.protocol.startsWith('http') || !('caches' in window)) return;
+    const startupVideos=await Promise.all(startupVideoFiles.map(file=>fastVideoUrl(file)));
     const cache = await caches.open('beisong-dungeon-v244');
     let complete = 0;
     await Promise.all(startupVideos.map(async url => {
@@ -3330,7 +3346,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   if(!view||!arena)return;
   const video=document.createElement('video');
   video.className='battle-loop-video';
-  video.src='https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/battle-loop-mobile.mp4';
+  fastVideoUrl('battle-loop-mobile.mp4').then(src=>{video.src=src;video.load()});
   video.muted=true;
   video.defaultMuted=true;
   video.loop=true;
@@ -3520,7 +3536,7 @@ body>.study-companion-icon{display:none;position:fixed;top:max(16px,env(safe-are
 </script>
 <script>
 // Prefer the uploaded CDN asset for the walking animation while retaining the local fallback.
-addEventListener('DOMContentLoaded',()=>{const v=document.querySelector('.character-walk-video');if(v&&v.src.includes('player-walk.mp4')&&!v.src.includes('cdn.jsdelivr.net')){v.src='https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/player-walk.mp4';v.load()}});
+addEventListener('DOMContentLoaded',()=>{const v=document.querySelector('.character-walk-video');if(v)fastVideoUrl('player-walk.mp4').then(src=>{if(v.src!==src){v.src=src;v.load()}})});
 </script>
 </body>
 </html>
