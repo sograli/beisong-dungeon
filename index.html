@@ -2108,6 +2108,7 @@ pacTutorialMessages.splice(0,pacTutorialMessages.length,'按右键移动一格�
 showPacmanTutorialStep=function(){const step=pacGame?.tutorialStep||0;$('#pacmanTutorialBox').hidden=false;$('#pacmanTutorialText').textContent=pacTutorialMessages[step]||pacTutorialMessages.at(-1);$('#finishPacmanTutorial').hidden=step<5};
 pacResolveGhostCollision=function(ghost){
   const g=pacGame;
+  if(g?.ending)return true;
   if(!g?.active||ghost.x!==g.player.x||ghost.y!==g.player.y)return false;
   if(g.tutorial){ghost.x=ghost.home.x;ghost.y=ghost.home.y;return true}
   if(Date.now()<g.poweredUntil){
@@ -2115,7 +2116,12 @@ pacResolveGhostCollision=function(ghost){
     toast('吃掉幽灵！');
     return true
   }
-  failPacmanRaid();return true;
+  // Lock the round before showing the result; prevents the tick loop from
+  // repeatedly handling the same collision and leaving the canvas paused.
+  g.ending=true;g.active=false;
+  if(typeof stopPacman==='function')stopPacman();
+  requestAnimationFrame(()=>{try{showRaidResult(false,'游戏结束','被幽灵抓住了','本次吃豆人记忆挑战失败。')}catch(error){console.warn('吃豆人失败结算显示异常',error);$('#pacmanStage').hidden=true;show('#raidsView')}});
+  return true;
 };
 pacAfterPlayerMove=function(){
   const g=pacGame;if(!g?.active)return;
