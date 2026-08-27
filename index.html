@@ -211,9 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
 </head>
 <body>
 <style>
-.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:12px;text-align:center;width:min(360px,82vw)}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}.memory-wake-inner small{min-height:18px;color:#bba970;font-size:12px}.memory-wake-progress{width:100%;height:7px;border:1px solid #66552e;border-radius:5px;background:#171b17;overflow:hidden}.memory-wake-progress i{display:block;width:8%;height:100%;background:linear-gradient(90deg,#9d7b32,#f0cb68);border-radius:inherit;transition:width .35s ease}.memory-wake-detail{min-height:18px;color:#9ca58f;font-size:11px}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}
+.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:12px;text-align:center;width:min(360px,82vw)}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}.memory-wake-inner small{min-height:18px;color:#bba970;font-size:12px}.memory-wake-progress{width:100%;height:7px;border:1px solid #66552e;border-radius:5px;background:#171b17;overflow:hidden}.memory-wake-progress i{display:block;width:8%;height:100%;background:linear-gradient(90deg,#9d7b32,#f0cb68);border-radius:inherit;transition:width .35s ease}.memory-wake-detail{min-height:18px;color:#9ca58f;font-size:11px}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}.memory-wake-clear{display:none;border:1px solid #8d7135;border-radius:8px;background:transparent;color:#f2d47d;padding:7px 14px;font-size:12px;cursor:pointer}.memory-wake-clear.show{display:inline-block}
 </style>
-<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>正在唤起记忆...</b><div class="memory-wake-progress" aria-hidden="true"><i id="memoryWakeProgressBar"></i></div><small id="memoryWakeProgress">正在读取本地存档</small><span class="memory-wake-detail" id="memoryWakeDetail">准备题库与庄园场景</span></div></div>
+<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>正在唤起记忆...</b><div class="memory-wake-progress" aria-hidden="true"><i id="memoryWakeProgressBar"></i></div><small id="memoryWakeProgress">正在读取本地存档</small><span class="memory-wake-detail" id="memoryWakeDetail">准备题库与庄园场景</span><button class="memory-wake-clear" id="memoryWakeClear" type="button">清除旧缓存并刷新</button></div></div>
 <div class="start-screen" id="startScreen" role="dialog" aria-label="背诵地牢首页" style="position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;background:#080b09;color:#f3d476;overflow:hidden">
   <div class="start-screen-inner" style="position:relative;text-align:center">
     <h1 style="margin:0 0 54px;font:900 clamp(52px,12vw,112px)/1.05 serif;letter-spacing:0">背诵地牢</h1>
@@ -3034,8 +3034,10 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   const progress = document.querySelector('#memoryWakeProgress');
   const progressBar = document.querySelector('#memoryWakeProgressBar');
   const detail = document.querySelector('#memoryWakeDetail');
+  const clearButton = document.querySelector('#memoryWakeClear');
   const startupVideos = ['https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/memory-stage-intro-mobile.mp4','https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/sage-summon-intro-mobile.mp4','https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/battle-loop-mobile.mp4'];
   let startupFinished = false, startupPromise = null;
+  (async()=>{try{if(!('caches' in window))return;const old=(await caches.keys()).filter(k=>/^beisong-dungeon-v(?!256$)/.test(k));if(old.length&&clearButton){clearButton.classList.add('show');clearButton.onclick=async()=>{clearButton.disabled=true;clearButton.textContent='正在清除缓存...';await Promise.all(old.map(k=>caches.delete(k)));if(navigator.serviceWorker)await Promise.all((await navigator.serviceWorker.getRegistrations()).map(r=>r.unregister()));location.reload()}}}catch(e){console.warn('旧缓存检测失败',e)}})();
   function setWakeProgress(value, status, description) {
     if (progressBar) progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
     if (progress && status) progress.textContent = status;
@@ -3091,8 +3093,14 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   const cloudLoadBeforeWake = loadCloudProgress;
   loadCloudProgress = async function() {
     showMemoryWakeLoading();
-    try { return await cloudLoadBeforeWake() }
-    finally { hideMemoryWakeLoading() }
+    // Safari 在网络请求悬挂时可能永远不触发失败回调，云存档不能阻塞页面进入。
+    const timeout = new Promise(resolve => setTimeout(() => resolve(null), 8000));
+    try {
+      return await Promise.race([Promise.resolve().then(() => cloudLoadBeforeWake()), timeout]);
+    } catch (error) {
+      console.warn('云存档读取超时，将使用本地进度', error);
+      return null;
+    } finally { hideMemoryWakeLoading() }
   };
   if (document.readyState === 'complete') setTimeout(finishStartup, 100);
   else addEventListener('load', () => setTimeout(finishStartup, 100), {once:true});
