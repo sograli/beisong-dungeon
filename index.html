@@ -1062,6 +1062,8 @@ const chineseWorks=[
 ];
 if(Array.isArray(window.CHINESE_DOC_WORKS)){window.CHINESE_DOC_WORKS.forEach(work=>{const index=chineseWorks.findIndex(item=>item.title===work.title);if(index>=0)chineseWorks[index]=work;else chineseWorks.push(work)})}
 const classicalWordRules=Array.isArray(window.CLASSICAL_WORD_RULES)?window.CLASSICAL_WORD_RULES:[];
+// 校正“当”在《登泰山记》中的语境义：当道者意为挡在道路上。
+if(Array.isArray(window.classicalWordBank)) window.classicalWordBank.forEach(entry=>entry.senses?.forEach(sense=>{if(String(sense.example||'').includes('当道者')) sense.meaning='挡在道路上，挡住道路';}));
 chineseWorks.forEach(work=>work.paragraphs.forEach(paragraph=>{paragraph.words=[];paragraph.markedWords=[];const seen=new Set();classicalWordRules.forEach(([context,word,meaning])=>{if(!paragraph.text.includes(context))return;const key=word+'\u0000'+meaning;if(!seen.has(key)){seen.add(key);paragraph.words.push([word,meaning])}})}));
 let cnSession=null,selectedChineseWork=null;
 createChineseUi();createChineseUi=()=>{};
