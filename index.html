@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const storageKey='beisong-poetry-memory-bread-v1';
   let memory={};try{memory=JSON.parse(localStorage.getItem(storageKey)||'{}')||{}}catch(_){memory={}}
   let session=null;
-  const poetryNames=['离骚','沁园春·长沙','插秧歌','芣苢','静女','涉江采芙蓉','短歌行','归园田居','梦游天姥吟留别','登高','琵琶行','琵琶行并序','念奴娇·赤壁怀古','永遇乐·京口北固亭怀古','声声慢','虞美人','鹊桥仙','苏幕遮','蜀道难','将进酒','燕歌行','燕歌行并序','李凭箜篌引','锦瑟','书愤','蜀相','客至','登岳阳楼','登快阁','临安春雨初霁','扬州慢','望海潮','桂枝香·金陵怀古','拟行路难','春江花月夜'];
+  const poetryNames=['离骚','沁园春·长沙','插秧歌','芣苢','静女','无衣','涉江采芙蓉','短歌行','归园田居','山居秋暝','梦游天姥吟留别','登高','琵琶行','琵琶行并序','菩萨蛮','江城子·乙卯正月二十日夜记梦','念奴娇·赤壁怀古','念奴娇·过洞庭','永遇乐·京口北固亭怀古','菩萨蛮·书江西造口壁','青玉案·元夕','贺新郎','长亭送别·端正好','朝天子·咏喇叭','声声慢','虞美人','鹊桥仙','苏幕遮','蜀道难','将进酒','燕歌行','燕歌行并序','李凭箜篌引','锦瑟','书愤','蜀相','客至','登岳阳楼','登快阁','临安春雨初霁','扬州慢','望海潮','桂枝香·金陵怀古','拟行路难','春江花月夜'];
   const isPoetry=work=>/诗|词|曲|乐府/.test(String(work.genre||''))||poetryNames.includes(String(work.title||''));
   const works=()=>chineseWorks.filter(isPoetry);
   const fullText=work=>(work.paragraphs||[]).map(item=>String(item.text||'').trim()).filter(Boolean).join('\n');
@@ -211,9 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
 </head>
 <body>
 <style>
-.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:12px;text-align:center;width:min(360px,82vw)}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}.memory-wake-inner small{min-height:18px;color:#bba970;font-size:12px}.memory-wake-progress{width:100%;height:7px;border:1px solid #66552e;border-radius:5px;background:#171b17;overflow:hidden}.memory-wake-progress i{display:block;width:8%;height:100%;background:linear-gradient(90deg,#9d7b32,#f0cb68);border-radius:inherit;transition:width .35s ease}.memory-wake-detail{min-height:18px;color:#9ca58f;font-size:11px}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}.memory-wake-clear{display:none;border:1px solid #8d7135;border-radius:8px;background:transparent;color:#f2d47d;padding:7px 14px;font-size:12px;cursor:pointer}.memory-wake-clear.show{display:inline-block}
+.memory-wake-loading{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#050706;color:#f2d47d;opacity:1;visibility:visible;transition:opacity .38s ease,visibility .38s ease}.memory-wake-loading.done{opacity:0;visibility:hidden;pointer-events:none}.memory-wake-inner{display:grid;place-items:center;gap:12px;text-align:center;width:min(380px,86vw)}.memory-wake-mark{width:62px;height:62px;border:2px solid #66552e;border-top-color:#f0cb68;border-radius:50%;animation:memoryWakeSpin 1s linear infinite;box-shadow:0 0 24px #d5a94a22}.memory-wake-inner b{font:700 17px/1.4 "Microsoft YaHei",sans-serif;letter-spacing:0;color:#f2d47d}.memory-wake-inner small{min-height:18px;color:#bba970;font-size:12px}.memory-wake-progress{width:100%;height:7px;border:1px solid #66552e;border-radius:5px;background:#171b17;overflow:hidden}.memory-wake-progress i{display:block;width:0;height:100%;background:linear-gradient(90deg,#9d7b32,#f0cb68);border-radius:inherit;transition:width .35s ease}.memory-wake-detail{min-height:18px;color:#9ca58f;font-size:11px}@keyframes memoryWakeSpin{to{transform:rotate(360deg)}}.memory-wake-actions{display:grid;width:100%;gap:9px;margin-top:4px}.memory-wake-actions button{min-height:44px;border:1px solid #8d7135;border-radius:8px;padding:9px 12px;cursor:pointer}.memory-wake-load{background:#d5b75b;color:#17140c;font-weight:800}.memory-wake-direct{background:transparent;color:#e7d8a7}.memory-wake-actions button small{display:block;margin-top:3px;color:inherit;opacity:.72;font-size:10px}.resource-load-float{position:fixed;z-index:2147482000;right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));width:min(210px,55vw);padding:9px 11px;border:1px solid #8d713566;border-radius:8px;background:#101710dd;color:#e8d38e;box-shadow:0 5px 18px #0007;font-size:11px;pointer-events:none}.resource-load-float[hidden]{display:none}.resource-load-float div{height:4px;margin-top:6px;border-radius:3px;background:#343829;overflow:hidden}.resource-load-float i{display:block;width:0;height:100%;background:#e7c65f;transition:width .3s ease}
 </style>
-<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>正在唤起记忆...</b><div class="memory-wake-progress" aria-hidden="true"><i id="memoryWakeProgressBar"></i></div><small id="memoryWakeProgress">正在读取本地存档</small><span class="memory-wake-detail" id="memoryWakeDetail">准备题库与庄园场景</span><button class="memory-wake-clear" id="memoryWakeClear" type="button">清除旧缓存并刷新</button></div></div>
+<div class="memory-wake-loading" id="memoryWakeLoading" role="status" aria-live="polite"><div class="memory-wake-inner"><i class="memory-wake-mark"></i><b>唤起记忆</b><div class="memory-wake-progress" aria-hidden="true"><i id="memoryWakeProgressBar"></i></div><small id="memoryWakeProgress">请选择进入方式</small><span class="memory-wake-detail" id="memoryWakeDetail">动画资源约 3 MB</span><div class="memory-wake-actions" id="memoryWakeActions"><button class="memory-wake-load" id="memoryWakeLoad" type="button">加载软件<small>约 3 MB，预计少于 1 分钟</small></button><button class="memory-wake-direct" id="memoryWakeDirect" type="button">直接进入<small>边体验边加载，部分动画可能暂时无法播放</small></button></div></div></div><aside class="resource-load-float" id="resourceLoadFloat" hidden><span id="resourceLoadText">正在后台加载资源 0%</span><div><i id="resourceLoadBar"></i></div></aside>
 <div class="start-screen" id="startScreen" role="dialog" aria-label="背诵地牢首页" style="position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;background:#080b09;color:#f3d476;overflow:hidden">
   <div class="start-screen-inner" style="position:relative;text-align:center">
     <h1 style="margin:0 0 54px;font:900 clamp(52px,12vw,112px)/1.05 serif;letter-spacing:0">背诵地牢</h1>
@@ -248,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./chinese-content.js"></script>
+<script src="./chinese-pdf60-additions.js"></script>
 <script src="./politics-pdf-content.js"></script>
 <script src="./hall-of-sages-bundle.js"></script>
 <script src="./politics-pdf-fourth.js"></script>
@@ -1088,7 +1089,7 @@ function bindSimpleShow(p){$('#simpleShow').onclick=()=>showReader(p.text)}
 function showReader(textValue){$('#cnBattleBody').innerHTML=`<div class="cn-reader">${escapeHtml(textValue)}</div><button class="primary" id="closeReader">关闭展示</button>`;$('#closeReader').onclick=renderChineseStage}
 function renderParagraphMeaning(p){$('#cnStageLabel').textContent='分段 · 理解段意';$('#cnBattleBody').innerHTML=simpleShow(p)+`<p>写出这一段表达的意思（符合度达到 80% 即可）。</p><textarea class="answer-input" id="cnAnswer"></textarea><button class="primary" id="cnSubmit">确认</button>`;bindSimpleShow(p);$('#cnSubmit').onclick=()=>{if(cnSimilarity($('#cnAnswer').value,p.meaning)<.8)return addCurse(cnSession.work,'段意',`第${cnSession.paragraphIndex+1}段表达什么？`,p.meaning),finishChineseLevel(false);cnSession.stage=1;renderChineseStage()}}
 function renderWords(p){const index=cnSession.wordIndex||0,item=p.words[index];if(!item){cnSession.stage=2;return renderChineseStage()}$('#cnStageLabel').textContent=`分段 · 加点字 ${index+1}/${p.words.length}`;$('#cnBattleBody').innerHTML=`<p>解释加点字：<b>${escapeHtml(item[0])}</b></p><input class="answer-input" id="cnAnswer"><button class="primary" id="cnSubmit">确认</button>`;$('#cnSubmit').onclick=()=>{const input=$('#cnAnswer').value,accepted=String(item[1]||'').split(/[，,、；;]/).map(value=>value.trim()).filter(Boolean);const submitted=String(input||'').split(/[，,、；;]/).map(value=>value.trim()).filter(Boolean);const ok=submitted.length>0&&submitted.every(value=>accepted.some(answer=>cnSimilarity(value,answer)>=.8));if(!ok)addCurse(cnSession.work,'加点字',`“${item[0]}”是什么意思？`,item[1]);cnSession.wordIndex=index+1;if(ok)renderWords(p);else finishChineseLevel(false)}}
-function clauses(textValue){return textValue.split(/(?<=[。！？；])/).filter(Boolean)}
+function clauses(textValue){return String(textValue||'').match(/[^。！？；]+[。！？；]?/g)||[]}
 function renderClauseFill(p){const parts=clauses(p.text),count=Math.floor(parts.length*.6),selected=parts.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,count).sort((a,b)=>a-b);cnSession.blankClauses=cnSession.blankClauses||selected;$('#cnStageLabel').textContent='分段 · 分句填空';$('#cnBattleBody').innerHTML=parts.map((part,i)=>cnSession.blankClauses.includes(i)?`<textarea class="answer-input" data-clause="${i}" placeholder="填写第 ${i+1} 个被挖空分句"></textarea>`:`<p>${escapeHtml(part)}</p>`).join('')+'<button class="primary" id="cnSubmit">确认</button>';$('#cnSubmit').onclick=()=>{const bad=cnSession.blankClauses.find(i=>cnSimilarity($(`[data-clause="${i}"]`).value,parts[i])<.92);if(bad!==undefined)return addCurse(cnSession.work,'分句',`补全第${bad+1}个分句`,parts[bad]),finishChineseLevel(false);cnSession.stage=3;renderChineseStage()}}
 function renderParagraphRecite(p){const hint=[...p.text].map(ch=>/[，。！？；：]/.test(ch)?ch:'□').join('');$('#cnStageLabel').textContent='分段 · 整段默写';$('#cnBattleBody').innerHTML=`<div class="clause-hint">${hint}</div><textarea class="answer-input" id="cnAnswer" placeholder="默写整段"></textarea><button class="primary" id="cnSubmit">确认</button>`;$('#cnSubmit').onclick=()=>{const ok=cnNorm($('#cnAnswer').value)===cnNorm(p.text);if(!ok)addCurse(cnSession.work,'整段',`默写《${cnSession.work.title}》第${cnSession.paragraphIndex+1}段`,p.text);finishChineseLevel(ok)}}
 function finishChineseLevel(ok){if(!ok){toast('答案未通过，已写入诅咒');return leaveChineseLevel()}const coins=10+Math.floor(Math.random()*11),heal=10+Math.floor(Math.random()*11);state.coins+=coins;state.hp=Math.min(typeof getMaxHp==='function'?getMaxHp():100,state.hp+heal);grantChineseCharge(1);state.chineseProgress[`${cnSession.work.id}-${cnSession.type}-${cnSession.paragraphIndex}`]=Date.now();save();toast(`通关：金币 +${coins}，生命 +${heal}，充能 +1`);leaveChineseLevel()}
@@ -3042,15 +3043,31 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
   const progress = document.querySelector('#memoryWakeProgress');
   const progressBar = document.querySelector('#memoryWakeProgressBar');
   const detail = document.querySelector('#memoryWakeDetail');
-  const clearButton = document.querySelector('#memoryWakeClear');
+  const loadButton = document.querySelector('#memoryWakeLoad');
+  const directButton = document.querySelector('#memoryWakeDirect');
+  const resourceFloat = document.querySelector('#resourceLoadFloat');
+  const resourceText = document.querySelector('#resourceLoadText');
+  const resourceBar = document.querySelector('#resourceLoadBar');
   const startupVideos = ['https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/memory-stage-intro-mobile.mp4','https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/sage-summon-intro-mobile.mp4','https://cdn.jsdelivr.net/gh/sograli/beisong-dungeon@main/assets/videos/battle-loop-mobile.mp4'];
   let startupFinished = false, startupPromise = null;
-  (async()=>{try{if(!('caches' in window))return;const old=(await caches.keys()).filter(k=>/^beisong-dungeon-v(?!256$)/.test(k));if(old.length&&clearButton){clearButton.classList.add('show');clearButton.onclick=async()=>{clearButton.disabled=true;clearButton.textContent='正在清除缓存...';await Promise.all(old.map(k=>caches.delete(k)));if(navigator.serviceWorker)await Promise.all((await navigator.serviceWorker.getRegistrations()).map(r=>r.unregister()));location.reload()}}}catch(e){console.warn('旧缓存检测失败',e)}})();
   function setWakeProgress(value, status, description) {
     if (progressBar) progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
     if (progress && status) progress.textContent = status;
     if (detail && description) detail.textContent = description;
   }
+  function setResourceProgress(value, label) {
+    const amount=Math.max(0,Math.min(100,value));
+    if(resourceBar)resourceBar.style.width=amount+'%';
+    if(resourceText)resourceText.textContent=label||`正在后台加载资源 ${amount}%`;
+  }
+  function enterManorNow() {
+    if(!startupFinished){startupFinished=true;gameEntered=true;document.querySelector('#startScreen')?.remove();if(typeof openManor==='function')openManor()}
+    hideMemoryWakeLoading();
+    if(resourceFloat)resourceFloat.hidden=false;
+    cacheStartupVideos().catch(error=>{console.warn('后台资源加载失败',error);setResourceProgress(0,'部分资源稍后继续加载')});
+  }
+  if(directButton)directButton.onclick=enterManorNow;
+  if(loadButton)loadButton.onclick=()=>{loadButton.disabled=true;directButton.disabled=true;finishStartup()};
   window.showMemoryWakeLoading = () => loading?.classList.remove('done');
   window.hideMemoryWakeLoading = () => loading?.classList.add('done');
   async function cacheStartupVideos() {
@@ -3070,8 +3087,12 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
         } finally { clearTimeout(timeout) }
       }
       complete++;
+      const percent=Math.round(complete/startupVideos.length*100);
       setWakeProgress(10 + Math.round(complete / startupVideos.length * 25), `正在预载动画 ${complete} / ${startupVideos.length}`, '为手机端提前缓存关卡与抽卡动画');
+      setResourceProgress(percent,`正在后台加载资源 ${percent}%`);
     }));
+    setResourceProgress(100,'资源加载完成');
+    setTimeout(()=>{if(resourceFloat)resourceFloat.hidden=true},1200);
   }
   function finishStartup() {
     if (startupPromise) return startupPromise;
@@ -3080,18 +3101,15 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
       setWakeProgress(8, '正在读取本地存档', '检查账号进度与本地设置');
       await Promise.resolve();
       setWakeProgress(12, '正在准备题库', '加载思政、语文与实词数据');
-      // 动画后台预载，不让网络状况卡住启动页。
-      cacheStartupVideos().catch(error => {
+      try { await cacheStartupVideos() } catch(error) {
         console.warn('动画预载失败，将在需要时重试',error);
         if (!startupFinished) setWakeProgress(38, '动画将在后台继续缓存', '网络恢复后会自动重试');
-      });
+        if(resourceFloat&&!resourceFloat.hidden){setResourceProgress(0,'部分资源稍后继续加载');setTimeout(()=>resourceFloat.hidden=true,2200)}
+      }
       if (startupFinished) return;
       setWakeProgress(68, '正在初始化庄园场景', '载入地形、建筑与玩家形象');
       await new Promise(resolve => requestAnimationFrame(resolve));
-      startupFinished = true;
-      gameEntered = true;
-      document.querySelector('#startScreen')?.remove();
-      if (typeof openManor === 'function') openManor();
+      if(!startupFinished){startupFinished = true;gameEntered = true;document.querySelector('#startScreen')?.remove();if (typeof openManor === 'function') openManor()}
       setWakeProgress(100, '记忆唤起完成', '正在进入庄园');
       await new Promise(resolve => setTimeout(resolve, 180));
       hideMemoryWakeLoading();
@@ -3110,8 +3128,8 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
       return null;
     } finally { hideMemoryWakeLoading() }
   };
-  if (document.readyState === 'complete') setTimeout(finishStartup, 100);
-  else addEventListener('load', () => setTimeout(finishStartup, 100), {once:true});
+  showMemoryWakeLoading();
+  setWakeProgress(0,'请选择进入方式','动画资源约 3 MB');
 })();
 </script>
 <script>
@@ -3128,7 +3146,7 @@ if(typeof applyCharacterSkin==='function')applyCharacterSkin();
 
   clauses = function(textValue) {
     const result = [];
-    String(textValue || '').split(/(?<=[。！？；])/).filter(Boolean).forEach(part => {
+    (String(textValue || '').match(/[^。！？；]+[。！？；]?/g)||[]).forEach(part => {
       if (!hasAnswerContent(part)) {
         if (result.length) result[result.length - 1] += part;
         return;
