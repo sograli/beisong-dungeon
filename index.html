@@ -1015,6 +1015,16 @@ function beginAuthCooldown(){if(Date.now()<authCooldownUntil){updateAuthCooldown
 $('#authBtn').onclick=()=>{openAuth();setAuthMethod(authMethod);updateAuthCooldown()};$('#closeAuth').onclick=()=>$('#authModal').classList.remove('open');$('#emailModeBtn').onclick=()=>setAuthMethod('email');$('#accountModeBtn').onclick=()=>setAuthMethod('account');$('#refreshCaptchaBtn').onclick=newCaptcha;
 $('#loginBtn').onclick=async()=>{if(!verifyHuman())return;const password=$('#authPassword').value,email=authMethod==='account'?accountLoginEmail($('#authAccountName').value):$('#authEmail').value.trim();if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');const button=$('#loginBtn');button.disabled=true;setAuthMessage('正在加载云端登录组件…');try{await ensureSupabaseClient();setAuthMessage('正在连接云端…');if(authMode==='recovery'){const{error}=await supabaseClient.auth.updateUser({password});if(error)return setAuthMessage(authErrorMessage(error));authMode='login';setAuthMessage('密码已更新，可以继续游戏。');renderAuth();return}const{error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)return setAuthMessage(authErrorMessage(error));setAuthMessage('登录成功，正在同步进度…');setTimeout(()=>$('#authModal').classList.remove('open'),700)}catch(error){setAuthMessage(error?.message==='SUPABASE_SDK_UNAVAILABLE'?cloudUnavailableMessage():authErrorMessage(error))}finally{button.disabled=false}};
 let registrationBusy=false;
+async function directSupabaseSignUp(email,password,options){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+  try{
+    const redirect=options?.emailRedirectTo,endpoint=SUPABASE_URL+'/auth/v1/signup'+(redirect?'?redirect_to='+encodeURIComponent(redirect):'');
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY},body:JSON.stringify({email,password,data:options?.data||{}}),signal:controller.signal});
+    const payload=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(payload.msg||payload.message||payload.error_description||`注册失败（${response.status}）`);
+    return{data:{user:payload.user||payload,session:payload.access_token?payload:null},error:null};
+  }catch(error){if(error?.name==='AbortError')throw new Error('REGISTER_TIMEOUT');throw error}finally{clearTimeout(timer)}
+}
 $('#registerBtn').onclick=async()=>{
   if(registrationBusy)return setAuthMessage('注册请求正在处理中，请勿重复点击。');
   if(!navigator.onLine)return setAuthMessage('当前设备没有网络连接，请联网后重试。');
@@ -1023,8 +1033,6 @@ $('#registerBtn').onclick=async()=>{
     name=$('#authAccountName').value.trim(),
     email=authMethod==='account'?accountLoginEmail(name):$('#authEmail').value.trim();
   if(!email||password.length<6)return setAuthMessage(authMethod==='account'?'账号需为 3–20 位中文、字母、数字、下划线或短横线，密码至少 6 位。':'请输入邮箱和至少 6 位密码。');
-  setAuthMessage('正在加载云端登录组件…');
-  try{await ensureSupabaseClient()}catch(error){return setAuthMessage(cloudUnavailableMessage())}
   if(!beginAuthCooldown())return;
   registrationBusy=true;
   const controls=[$('#loginBtn'),$('#registerBtn'),$('#forgotBtn')];
@@ -1036,17 +1044,14 @@ $('#registerBtn').onclick=async()=>{
   try{
     const options=authMethod==='account'?{data:{login_name:name,login_type:'account'}}:{},redirect=authRedirectUrl();
     if(authMethod==='email'&&redirect)options.emailRedirectTo=redirect;
-    const{data,error}=await Promise.race([
-      supabaseClient.auth.signUp({email,password,options}),
-      new Promise((_,reject)=>setTimeout(()=>reject(timeoutError),18000))
-    ]);
+    const{data,error}=await directSupabaseSignUp(email,password,options);
     if(error)return setAuthMessage(authErrorMessage(error));
     const seconds=Math.max(1,Math.round((Date.now()-startedAt)/1000));
     setAuthMessage(authMethod==='account'
-      ?(data.session?`账号注册并登录成功（用时 ${seconds} 秒）。`:'账号已创建，但 Supabase 开启了邮箱确认。请在 Authentication → Providers → Email 中关闭 Confirm email，然后直接登录。')
-      :(data.session?`注册并登录成功（用时 ${seconds} 秒）。`:'注册成功，请打开邮箱中的验证邮件。请勿重复点击注册。'));
+      ?(data.session?`账号注册成功（用时 ${seconds} 秒），现在可以点击“账号登录”。`:'账号已创建，但 Supabase 开启了邮箱确认。请在 Authentication → Providers → Email 中关闭 Confirm email，然后直接登录。')
+      :(data.session?`注册成功（用时 ${seconds} 秒），现在可以登录。`:'注册成功，请打开邮箱中的验证邮件。请勿重复点击注册。'));
   }catch(error){
-    setAuthMessage(error===timeoutError?'注册服务器响应超时。账号可能已经创建，请先尝试登录，不要重复注册。':authErrorMessage(error));
+    setAuthMessage(error===timeoutError||error?.message==='REGISTER_TIMEOUT'?'注册服务器响应超时。账号可能已经创建，请先尝试登录，不要重复注册。':authErrorMessage(error));
   }finally{
     clearTimeout(slowTimer);
     registrationBusy=false;
